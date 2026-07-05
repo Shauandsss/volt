@@ -1,0 +1,128 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = 'Volt — the watch that works for you', description = 'Smartwatches became notification leashes. Volt gives your attention back. Join the list.' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- OG -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://volt.example.com" />
+
+    <!-- Fonts -->
+    <link rel="preload" as="font" href="/fonts/instrument-serif-regular.woff2" type="font/woff2" crossorigin />
+    <link rel="preload" as="font" href="/fonts/ibm-plex-mono-regular.woff2" type="font/woff2" crossorigin />
+
+    <style is:global>
+      @font-face {
+        font-family: 'Instrument Serif';
+        src: url('/fonts/instrument-serif-regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'IBM Plex Mono';
+        src: url('/fonts/ibm-plex-mono-regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        --bg-dark: #0D0F0C;
+        --green-primary: #9BB884;
+        --green-light: #C8D8B9;
+        --bg-light: #EDEAE0;
+        --ink-dark: #1A1C18;
+
+        --font-serif: 'Instrument Serif', serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: var(--green-light);
+        font-family: var(--font-mono);
+        line-height: 1.6;
+        font-size: clamp(14px, 2vw, 16px);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1, h2, h3 {
+        font-family: var(--font-serif);
+        font-weight: 400;
+      }
+
+      h1 {
+        font-size: clamp(2.5rem, 8vw, 4rem);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      h2 {
+        font-size: clamp(1.75rem, 5vw, 2.5rem);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+      }
+
+      a {
+        color: var(--green-primary);
+        text-decoration: none;
+        transition: color 200ms ease-out;
+      }
+
+      a:hover {
+        color: var(--green-light);
+      }
+
+      input, button {
+        font: inherit;
+        color: inherit;
+      }
+
+      input:focus-visible, button:focus-visible {
+        outline: 2px solid var(--green-primary);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+
+    <!-- Vercel Web Analytics -->
+    <script defer src="/_vercel/insights/script.js"></script>
+  </body>
+</html>

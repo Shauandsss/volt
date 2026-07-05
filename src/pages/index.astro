@@ -1,0 +1,676 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <style>
+    .section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* Section 1: Hero */
+    .section-hero {
+      background-color: var(--bg-dark);
+      position: relative;
+    }
+
+    .hero-content {
+      text-align: center;
+      max-width: 720px;
+    }
+
+    .hero-wordmark {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--green-primary);
+      margin-bottom: 3rem;
+      text-transform: uppercase;
+    }
+
+    .hero-headline {
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-subline {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--green-light);
+      line-height: 1.8;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Section 2: The Cost */
+    .section-cost {
+      background-color: var(--bg-dark);
+    }
+
+    .cost-content {
+      max-width: 720px;
+      text-align: center;
+    }
+
+    .cost-lines {
+      margin-bottom: 3rem;
+    }
+
+    .cost-line {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      line-height: 1.4;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out forwards;
+      color: var(--green-light);
+    }
+
+    .cost-line:nth-child(1) { animation-delay: 0s; }
+    .cost-line:nth-child(2) { animation-delay: 0.3s; }
+    .cost-line:nth-child(3) { animation-delay: 0.6s; }
+    .cost-line:nth-child(4) { animation-delay: 0.9s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cost-closer {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--green-primary);
+      margin-top: 2rem;
+    }
+
+    .counter {
+      font-weight: bold;
+      color: var(--green-primary);
+    }
+
+    /* Section 3: The Defection */
+    .section-defection {
+      background: linear-gradient(to right, var(--bg-dark), var(--green-primary));
+      gap: 2rem;
+    }
+
+    .defection-content {
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .defection-headline {
+      margin-bottom: 1.5rem;
+      color: var(--ink-dark);
+    }
+
+    .defection-copy {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--ink-dark);
+      margin-bottom: 2rem;
+      line-height: 1.8;
+    }
+
+    .refusal-list {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .refusal-item {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--ink-dark);
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    .refusal-item:nth-child(1) { animation-delay: 0s; }
+    .refusal-item:nth-child(2) { animation-delay: 0.1s; }
+    .refusal-item:nth-child(3) { animation-delay: 0.2s; }
+    .refusal-item:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .counterpoint {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--ink-dark);
+      border-left: 2px solid var(--ink-dark);
+      padding-left: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .watch-placeholder {
+      flex: 1;
+      min-height: 400px;
+      background-color: rgba(26, 28, 24, 0.2);
+      border: 2px solid var(--ink-dark);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      color: var(--ink-dark);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .section-defection {
+        flex-direction: column;
+      }
+
+      .defection-content {
+        max-width: 100%;
+      }
+
+      .watch-placeholder {
+        min-height: 300px;
+        order: -1;
+      }
+    }
+
+    /* Section 4: The Conviction */
+    .section-conviction {
+      background-color: var(--bg-light);
+      color: var(--ink-dark);
+    }
+
+    .conviction-content {
+      max-width: 720px;
+      text-align: center;
+    }
+
+    .conviction-headline {
+      color: var(--ink-dark);
+      margin-bottom: 1.5rem;
+    }
+
+    .conviction-copy {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--ink-dark);
+      margin-bottom: 3rem;
+      line-height: 1.8;
+    }
+
+    .conviction-statements {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .statement {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--ink-dark);
+      padding: 1rem 0;
+      border-top: 1px solid var(--ink-dark);
+    }
+
+    .statement:last-child {
+      border-bottom: 1px solid var(--ink-dark);
+    }
+
+    /* Section 5: Lead Capture */
+    .section-capture {
+      background-color: var(--bg-dark);
+    }
+
+    .capture-content {
+      max-width: 500px;
+      text-align: center;
+    }
+
+    .capture-headline {
+      margin-bottom: 1rem;
+    }
+
+    .capture-subline {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--green-light);
+      margin-bottom: 2rem;
+    }
+
+    .form-container {
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: var(--green-primary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: transparent;
+      border: 1px solid var(--green-primary);
+      color: var(--green-light);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      transition: all 200ms ease-out;
+    }
+
+    .form-group input:focus-visible {
+      background-color: rgba(155, 184, 132, 0.1);
+      border-color: var(--green-light);
+    }
+
+    .form-group input::placeholder {
+      color: rgba(200, 216, 185, 0.5);
+    }
+
+    .form-error {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #ff6b6b;
+      margin-top: 0.3rem;
+      display: none;
+    }
+
+    .form-error.show {
+      display: block;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      background-color: transparent;
+      border: 2px solid var(--green-primary);
+      color: var(--green-primary);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 200ms ease-out;
+      text-transform: uppercase;
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: var(--green-primary);
+      color: var(--ink-dark);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .form-success {
+      display: none;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .form-success.show {
+      display: block;
+    }
+
+    .success-message {
+      font-family: var(--font-mono);
+      color: var(--green-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .success-timestamp {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--green-primary);
+    }
+
+    .form-note {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--green-light);
+      margin-top: 1.5rem;
+      opacity: 0.8;
+    }
+
+    /* Honeypot */
+    .form-honeypot {
+      display: none;
+    }
+
+    /* Footer */
+    footer {
+      background-color: var(--bg-dark);
+      border-top: 1px solid var(--green-primary);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    footer p {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--green-light);
+    }
+
+    footer a {
+      color: var(--green-primary);
+    }
+
+    /* Scroll animations for Section 2 */
+    .cost-line {
+      scroll-behavior: smooth;
+    }
+  </style>
+
+  <!-- Section 1: Hero -->
+  <section class="section section-hero">
+    <div class="hero-content">
+      <div class="hero-wordmark">VOLT</div>
+      <h1 class="hero-headline">
+        They put a slot machine on your wrist.<br />
+        You called it an upgrade.
+      </h1>
+      <p class="hero-subline">
+        Every buzz is a bet placed on your attention. The house always wins.
+      </p>
+    </div>
+    <div class="scroll-indicator">▼</div>
+  </section>
+
+  <!-- Section 2: The Cost -->
+  <section class="section section-cost">
+    <div class="cost-content">
+      <div class="cost-lines">
+        <div class="cost-line">The report you never finished.</div>
+        <div class="cost-line">The dinner you only half attended.</div>
+        <div class="cost-line">The run cut short at mile two.</div>
+        <div class="cost-line">The sleep you traded for a glow at 11:47 PM.</div>
+      </div>
+      <p class="cost-closer">
+        You checked your wrist <span class="counter">0</span> times today. How many were worth it?
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 3: The Defection -->
+  <section class="section section-defection">
+    <div class="defection-content">
+      <h2 class="defection-headline">
+        Volt. The watch that works for you.<br />
+        Not for them.
+      </h2>
+      <p class="defection-copy">
+        Your smartwatch answers to any app that pays for your attention. Volt answers to you. Time, goals, silence. Everything else waits.
+      </p>
+      <ul class="refusal-list">
+        <li class="refusal-item">✕ Interrupt your work block for a flash sale.</li>
+        <li class="refusal-item">✕ Buzz through dinner for an email that could wait.</li>
+        <li class="refusal-item">✕ Turn your run into a public scoreboard.</li>
+        <li class="refusal-item">✕ Glow in your bedroom after 9 PM.</li>
+      </ul>
+      <p class="counterpoint">
+        The people who truly matter always get through. The rest arrives in batches, on your schedule.
+      </p>
+    </div>
+    <div class="watch-placeholder">[Product image: Volt watch — retro white case, mono LCD screen]</div>
+  </section>
+
+  <!-- Section 4: The Conviction -->
+  <section class="section section-conviction">
+    <div class="conviction-content">
+      <h2 class="conviction-headline">We left nothing for you to configure.</h2>
+      <p class="conviction-copy">
+        We made the decisions. That's what building something means. One product, one opinion. Made to last years on your wrist — not until next year's launch.
+      </p>
+      <div class="conviction-statements">
+        <div class="statement">Ready the day it arrives.</div>
+        <div class="statement">No settings screen to get lost in.</div>
+        <div class="statement">No annual upgrade to chase.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: Lead Capture -->
+  <section class="section section-capture">
+    <div class="capture-content">
+      <h2 class="capture-headline">The first units go to the people who get it.</h2>
+      <p class="capture-subline">Leave your email. You'll hear from us before anyone else.</p>
+
+      <div class="form-container">
+        <form id="leadForm" method="POST" action="/api/subscribe">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+              aria-required="true"
+            />
+            <div class="form-error" id="emailError"></div>
+          </div>
+
+          <!-- Honeypot -->
+          <input type="text" name="website" class="form-honeypot" autocomplete="off" />
+
+          <button type="submit" class="btn" id="submitBtn">Cut the leash</button>
+        </form>
+
+        <div class="form-success" id="successMessage">
+          <p class="success-message">You're on the list. Unit by unit, we'll notify in order of arrival.</p>
+          <p class="success-timestamp" id="timestamp"></p>
+        </div>
+      </div>
+
+      <p class="form-note">One email when Volt opens. No others. We promise little on purpose.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>VOLT · built to last · contact: <a href="mailto:hello@volt.example.com">hello@volt.example.com</a></p>
+  </footer>
+
+  <script>
+    // Counter animation
+    const counterEl = document.querySelector('.counter');
+    let hasAnimated = false;
+
+    const animateCounter = () => {
+      if (hasAnimated) return;
+      hasAnimated = true;
+
+      let current = 0;
+      const target = 94;
+      const duration = 1200;
+      const start = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        current = Math.floor(target * progress);
+        counterEl.textContent = current;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          counterEl.textContent = target;
+        }
+      };
+
+      animate();
+    };
+
+    // Intersection Observer for counter
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateCounter();
+        }
+      });
+    });
+
+    observer.observe(counterEl);
+
+    // Form handling
+    const form = document.getElementById('leadForm');
+    const emailInput = document.getElementById('email');
+    const emailError = document.getElementById('emailError');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+    const timestamp = document.getElementById('timestamp');
+
+    const validateEmail = (email) => {
+      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return regex.test(email);
+    };
+
+    const getUTMParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        utm_source: params.get('utm_source') || '',
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || '',
+      };
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+
+      // Reset error
+      emailError.classList.remove('show');
+      emailError.textContent = '';
+
+      // Validate
+      if (!validateEmail(email)) {
+        emailError.textContent = "That email doesn't look right.";
+        emailError.classList.add('show');
+        return;
+      }
+
+      // Disable button
+      submitBtn.disabled = true;
+      submitBtn.textContent = '|/-\\'[Math.floor(Date.now() / 200) % 4];
+
+      // Spinner animation
+      let spinnerFrame = 0;
+      const spinnerInterval = setInterval(() => {
+        const spinner = '|/-\\'[spinnerFrame % 4];
+        submitBtn.textContent = spinner;
+        spinnerFrame++;
+      }, 150);
+
+      try {
+        const utmParams = getUTMParams();
+        const response = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            ...utmParams,
+          }),
+        });
+
+        clearInterval(spinnerInterval);
+
+        if (response.ok) {
+          // Success
+          form.style.display = 'none';
+          successMessage.classList.add('show');
+
+          const now = new Date();
+          const dateStr = now.toLocaleDateString();
+          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          timestamp.textContent = `position recorded at ${dateStr} ${timeStr}`;
+
+          // Track event
+          if (typeof window.va !== 'undefined') {
+            window.va('event', { name: 'lead_submit' });
+          }
+        } else {
+          // Error (treat duplicate as success per spec)
+          if (response.status === 409) {
+            form.style.display = 'none';
+            successMessage.classList.add('show');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timestamp.textContent = `position recorded at ${dateStr} ${timeStr}`;
+          } else {
+            emailError.textContent = 'Something went wrong. Try again.';
+            emailError.classList.add('show');
+          }
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Cut the leash';
+        }
+      } catch (err) {
+        clearInterval(spinnerInterval);
+        emailError.textContent = 'Something went wrong. Try again.';
+        emailError.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Cut the leash';
+      }
+    });
+
+    // Track events
+    const trackEvent = (eventName) => {
+      if (typeof window.va !== 'undefined') {
+        window.va('event', { name: eventName });
+      }
+    };
+
+    // Scroll tracking
+    let scroll50 = false;
+    let scroll100 = false;
+
+    window.addEventListener('scroll', () => {
+      const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+
+      if (scrollPercent >= 50 && !scroll50) {
+        scroll50 = true;
+        trackEvent('scroll_50');
+      }
+
+      if (scrollPercent >= 100 && !scroll100) {
+        scroll100 = true;
+        trackEvent('scroll_100');
+      }
+    });
+
+    // Track form focus
+    emailInput.addEventListener('focus', () => {
+      trackEvent('form_focus');
+    }, { once: true });
+  </script>
+</Layout>
