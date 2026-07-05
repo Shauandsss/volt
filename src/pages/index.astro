@@ -4,6 +4,22 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout>
   <style>
+    /* Film grain overlay — fixed, full viewport, NO mix-blend-mode */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48ZmlsdGVyIGlkPSJnIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC44IiBudW1PY3RhdmVzPSI0IiByZXN1bHQ9Im4iIC8+PGZlQ29sb3JNYXRyaXggaW49Im4iIHR5cGU9InNhdHVyYXRlIiB2YWx1ZXM9IjAuMyIgLz48L2ZpbHRlcj48L2RlZnM+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIGZpbGw9IiMwMDAwMDAiIGZpbHRlcj0idXJsKCNnKSIgLz48L3N2Zz4=');
+      background-repeat: repeat;
+      background-size: 256px 256px;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 99;
+    }
+
     .section {
       min-height: 100vh;
       display: flex;
@@ -13,117 +29,140 @@ import Layout from '../layouts/Layout.astro';
       position: relative;
     }
 
-    /* Section 1: Hero */
-    .section-hero {
+    /* ===== SECTION 1: HERO ===== */
+    .section-1 {
       background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
       flex-direction: column;
       text-align: center;
     }
 
-    .hero-wordmark {
+    .wordmark {
       font-family: var(--font-mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
       color: var(--ink);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.3rem;
       text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
     }
 
     .rainbow-stripe {
-      height: 3px;
-      width: 40px;
-      background: linear-gradient(to right, #FF6B6B 0%, #FF6B6B 16.66%, #FFD93D 16.66%, #FFD93D 33.33%, #6BCB77 33.33%, #6BCB77 50%, #4D96FF 50%, #4D96FF 66.66%, #9D4EDD 66.66%, #9D4EDD 83.33%, #FF006E 83.33%, #FF006E 100%);
-      margin-bottom: -0.3rem;
+      height: 2px;
+      width: 35px;
+      background: linear-gradient(to right, #FF6B6B 0%, #FFD93D 16%, #6BCB77 33%, #4D96FF 50%, #9D4EDD 66%, #FF006E 100%);
+      margin: 0.4rem auto 0;
     }
 
-    .hero-headline {
+    h1 {
       font-family: var(--font-serif);
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      line-height: 1.1;
-      letter-spacing: -0.01em;
+      font-size: clamp(2rem, 7vw, 3.5rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
       color: var(--ink);
-      margin: 2rem 0 3rem;
-      max-width: 800px;
+      margin: 1.5rem 0 2.5rem;
+      max-width: 850px;
     }
 
-    .watch-hero {
-      max-width: 350px;
-      margin: 0 auto;
+    .hero-watch {
+      max-width: 380px;
+      margin: 0 auto 2rem;
       position: relative;
-      transform: rotate(15deg);
-      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
-      margin-bottom: 1rem;
+      transform: rotate(8deg);
+      filter: drop-shadow(0 30px 40px rgba(0,0,0,0.18));
     }
 
-    .watch-hero img {
+    .hero-watch img {
       width: 100%;
       height: auto;
       display: block;
     }
 
-    .hero-subline {
+    .hero-caption {
       font-family: var(--font-serif);
       font-size: 0.95rem;
+      font-style: italic;
       color: var(--ink);
-      line-height: 1.8;
-      letter-spacing: 0.01em;
-      max-width: 600px;
+      line-height: 1.7;
+      max-width: 650px;
+      margin: 0 auto;
     }
 
-    .scroll-indicator {
+    .scroll-cue {
       position: absolute;
       bottom: 2rem;
       left: 50%;
       transform: translateX(-50%);
       font-family: var(--font-serif);
       color: var(--ink);
-      animation: pulse 1.5s ease-in-out infinite;
+      animation: pulse 1.5s ease-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 0.5; }
+      0%, 100% { opacity: 0.4; }
       50% { opacity: 1; }
     }
 
-    /* Section 2: The Cost (Dark) */
-    .section-cost {
-      background-color: var(--bg-dark);
+    /* ===== SECTION 2: THE COST (DARK SPREAD) ===== */
+    .section-2 {
+      background: linear-gradient(to right, var(--bg-dark-navy) 0%, var(--bg-dark-navy) 55%, rgba(17,21,34,0.3) 100%);
       color: var(--bg-paper);
       flex-direction: column;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-2::before {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      background-image: url('/images/volt-titanium-dark.png');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      opacity: 0.3;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .section-2::before {
+        opacity: 0.15;
+        width: 100%;
+      }
     }
 
     .cost-content {
-      max-width: 720px;
-      text-align: center;
+      max-width: 700px;
+      position: relative;
+      z-index: 1;
     }
 
     .cost-lines {
-      margin-bottom: 3rem;
+      margin-bottom: 2.5rem;
     }
 
     .cost-line {
       font-family: var(--font-serif);
-      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      font-size: clamp(1.4rem, 3.5vw, 2rem);
       line-height: 1.3;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       opacity: 0;
-      animation: fadeInUp 0.8s ease-out forwards;
+      animation: fadeInUpCost 0.6s ease-out forwards;
       color: var(--bg-paper);
     }
 
     .cost-line:nth-child(1) { animation-delay: 0s; }
-    .cost-line:nth-child(2) { animation-delay: 0.3s; }
-    .cost-line:nth-child(3) { animation-delay: 0.6s; }
-    .cost-line:nth-child(4) { animation-delay: 0.9s; }
+    .cost-line:nth-child(2) { animation-delay: 0.25s; }
+    .cost-line:nth-child(3) { animation-delay: 0.5s; }
+    .cost-line:nth-child(4) { animation-delay: 0.75s; }
 
-    @keyframes fadeInUp {
+    @keyframes fadeInUpCost {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(15px);
       }
       to {
         opacity: 1;
@@ -133,58 +172,58 @@ import Layout from '../layouts/Layout.astro';
 
     .cost-closer {
       font-family: var(--font-serif);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--bg-paper);
-      margin-top: 2rem;
-      letter-spacing: 0.01em;
+      margin-top: 1.5rem;
+      letter-spacing: 0.005em;
     }
 
     .counter {
-      font-weight: bold;
+      font-weight: 500;
       color: var(--mint);
     }
 
-    /* Section 3: The Defection */
-    .section-defection {
+    /* ===== SECTION 3: THE DEFECTION ===== */
+    .section-3 {
       background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      gap: 3rem;
+      gap: 4rem;
     }
 
     .defection-content {
       flex: 1;
-      max-width: 500px;
+      max-width: 480px;
     }
 
-    .defection-headline {
+    h2 {
       font-family: var(--font-serif);
-      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-size: clamp(1.6rem, 5vw, 2.3rem);
       line-height: 1.2;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
       color: var(--ink);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
     }
 
     .defection-copy {
       font-family: var(--font-serif);
       font-size: 0.95rem;
       color: var(--ink);
-      margin-bottom: 2rem;
+      margin-bottom: 1.8rem;
       line-height: 1.8;
     }
 
     .refusal-list {
       list-style: none;
-      margin-bottom: 2rem;
+      margin-bottom: 1.8rem;
     }
 
     .refusal-item {
       font-family: var(--font-mono);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--ink);
-      margin-bottom: 1rem;
+      margin-bottom: 0.85rem;
       opacity: 0;
-      animation: fadeIn 0.6s ease-out forwards;
-      letter-spacing: 0.02em;
+      animation: fadeInItem 0.5s ease-out forwards;
+      letter-spacing: 0.015em;
     }
 
     .refusal-item:nth-child(1) { animation-delay: 0s; }
@@ -192,7 +231,7 @@ import Layout from '../layouts/Layout.astro';
     .refusal-item:nth-child(3) { animation-delay: 0.2s; }
     .refusal-item:nth-child(4) { animation-delay: 0.3s; }
 
-    @keyframes fadeIn {
+    @keyframes fadeInItem {
       from { opacity: 0; }
       to { opacity: 1; }
     }
@@ -207,97 +246,91 @@ import Layout from '../layouts/Layout.astro';
       line-height: 1.8;
     }
 
-    .watch-section3 {
+    .section-3-image {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 400px;
+      min-height: 500px;
     }
 
-    .watch-image {
-      max-width: 300px;
+    .section-3-image img {
+      max-width: 320px;
       height: auto;
       display: block;
-      filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));
+      filter: drop-shadow(0 20px 35px rgba(0,0,0,0.15));
     }
 
     @media (max-width: 768px) {
-      .section-defection {
+      .section-3 {
         flex-direction: column;
       }
 
-      .watch-section3 {
+      .section-3-image {
         order: -1;
-        min-height: 300px;
+        min-height: 350px;
       }
     }
 
-    /* Section 4: The Conviction */
-    .section-conviction {
+    /* ===== SECTION 4: THE CONVICTION ===== */
+    .section-4 {
       background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
       flex-direction: column;
     }
 
     .conviction-content {
-      max-width: 720px;
+      max-width: 700px;
       text-align: center;
-    }
-
-    .conviction-headline {
-      font-family: var(--font-serif);
-      font-size: clamp(1.75rem, 5vw, 2.5rem);
-      line-height: 1.2;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-      margin-bottom: 1.5rem;
     }
 
     .conviction-copy {
       font-family: var(--font-serif);
       font-size: 0.95rem;
       color: var(--ink);
-      margin-bottom: 3rem;
+      margin-bottom: 2.5rem;
       line-height: 1.8;
     }
 
     .conviction-statements {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 0;
     }
 
     .statement {
       font-family: var(--font-mono);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--ink);
       padding: 1rem 0;
       border-top: 1px solid var(--ink);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.015em;
     }
 
     .statement:last-child {
       border-bottom: 1px solid var(--ink);
     }
 
-    /* Section 5: Lead Capture */
-    .section-capture {
+    /* ===== SECTION 5: LEAD CAPTURE ===== */
+    .section-5 {
       background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
       flex-direction: column;
     }
 
     .capture-content {
-      max-width: 500px;
+      max-width: 520px;
       text-align: center;
     }
 
-    .capture-headline {
-      font-family: var(--font-serif);
-      font-size: clamp(1.75rem, 5vw, 2.5rem);
-      line-height: 1.2;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-      margin-bottom: 1rem;
+    .product-stamp {
+      max-width: 100px;
+      margin: 0 auto 1.5rem;
+      opacity: 0.9;
+    }
+
+    .product-stamp img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     .capture-subline {
@@ -305,11 +338,11 @@ import Layout from '../layouts/Layout.astro';
       font-size: 0.9rem;
       color: var(--ink);
       margin-bottom: 2rem;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.005em;
     }
 
-    .form-container {
-      margin-bottom: 2rem;
+    .form-wrapper {
+      margin-bottom: 1.5rem;
     }
 
     .form-group {
@@ -319,42 +352,42 @@ import Layout from '../layouts/Layout.astro';
     .form-group label {
       display: block;
       font-family: var(--font-mono);
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       margin-bottom: 0.5rem;
       color: var(--ink);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .form-group input {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.8rem 1rem;
       background-color: transparent;
       border: 1px solid var(--ink);
       color: var(--ink);
       font-family: var(--font-mono);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       transition: all 200ms ease-out;
       letter-spacing: 0.01em;
     }
 
-    .form-group input:focus-visible {
-      outline: none;
-      border-color: var(--mint);
-      box-shadow: 0 0 0 3px rgba(199, 212, 184, 0.2);
+    .form-group input::placeholder {
+      color: rgba(43, 42, 39, 0.35);
     }
 
-    .form-group input::placeholder {
-      color: rgba(43, 42, 39, 0.4);
+    .form-group input:focus-visible {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(199, 212, 184, 0.3);
     }
 
     .form-error {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: #c41e3a;
-      margin-top: 0.3rem;
+      font-size: 0.7rem;
+      color: #b80000;
+      margin-top: 0.4rem;
       display: none;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.015em;
     }
 
     .form-error.show {
@@ -368,8 +401,8 @@ import Layout from '../layouts/Layout.astro';
       border: 1px solid var(--ink);
       color: var(--bg-paper);
       font-family: var(--font-mono);
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+      letter-spacing: 0.07em;
       cursor: pointer;
       transition: all 200ms ease-out;
       text-transform: uppercase;
@@ -377,7 +410,7 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .btn:hover:not(:disabled) {
-      background-color: var(--bg-paper);
+      background-color: transparent;
       color: var(--ink);
     }
 
@@ -387,13 +420,17 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .btn:disabled {
-      opacity: 0.6;
+      opacity: 0.55;
       cursor: not-allowed;
+    }
+
+    .form-honeypot {
+      display: none;
     }
 
     .form-success {
       display: none;
-      animation: fadeIn 0.6s ease-out;
+      animation: fadeIn 0.5s ease-out;
     }
 
     .form-success.show {
@@ -403,42 +440,45 @@ import Layout from '../layouts/Layout.astro';
     .success-message {
       font-family: var(--font-serif);
       color: var(--ink);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
     }
 
     .success-timestamp {
       font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--ink);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.015em;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .form-note {
       font-family: var(--font-serif);
       font-size: 0.8rem;
       color: var(--ink);
-      margin-top: 1.5rem;
-      opacity: 0.8;
-      letter-spacing: 0.01em;
+      margin-top: 1.2rem;
+      opacity: 0.75;
+      letter-spacing: 0.005em;
     }
 
-    .form-honeypot {
-      display: none;
-    }
-
-    /* Footer */
+    /* ===== FOOTER ===== */
     footer {
       background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
       border-top: 1px solid var(--ink);
       padding: 2rem;
       text-align: center;
+      position: relative;
+      z-index: 10;
     }
 
     footer p {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--ink);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.015em;
     }
 
     footer a {
@@ -447,31 +487,35 @@ import Layout from '../layouts/Layout.astro';
     }
 
     footer a:hover {
-      opacity: 0.7;
+      opacity: 0.6;
     }
   </style>
 
-  <!-- Section 1: Hero -->
-  <section class="section section-hero">
-    <div class="hero-wordmark">
+  <!-- SECTION 1: HERO -->
+  <section class="section section-1">
+    <div class="wordmark">
       VOLT
       <div class="rainbow-stripe"></div>
     </div>
-    <h1 class="hero-headline">
+
+    <h1>
       They put a slot machine on your wrist.<br />
       You called it an upgrade.
     </h1>
-    <div class="watch-hero">
-      <img src="/img/model.png" alt="Volt watch" width="280" height="280" loading="eager" />
+
+    <div class="hero-watch">
+      <img src="/images/volt-front-white.png" alt="Volt watch front view" width="380" height="380" loading="eager" />
     </div>
-    <p class="hero-subline">
+
+    <p class="hero-caption">
       Every buzz is a bet placed on your attention. The house always wins.
     </p>
-    <div class="scroll-indicator">▼</div>
+
+    <div class="scroll-cue">▼</div>
   </section>
 
-  <!-- Section 2: The Cost -->
-  <section class="section section-cost">
+  <!-- SECTION 2: THE COST (DARK INK SPREAD) -->
+  <section class="section section-2">
     <div class="cost-content">
       <div class="cost-lines">
         <div class="cost-line">The report you never finished.</div>
@@ -479,44 +523,51 @@ import Layout from '../layouts/Layout.astro';
         <div class="cost-line">The run cut short at mile two.</div>
         <div class="cost-line">The sleep you traded for a glow at 11:47 PM.</div>
       </div>
+
       <p class="cost-closer">
         You checked your wrist <span class="counter">0</span> times today. How many were worth it?
       </p>
     </div>
   </section>
 
-  <!-- Section 3: The Defection -->
-  <section class="section section-defection">
+  <!-- SECTION 3: THE DEFECTION -->
+  <section class="section section-3">
     <div class="defection-content">
-      <h2 class="defection-headline">
+      <h2>
         Volt. The watch that works for you.<br />
         Not for them.
       </h2>
+
       <p class="defection-copy">
         Your smartwatch answers to any app that pays for your attention. Volt answers to you. Time, goals, silence. Everything else waits.
       </p>
+
       <ul class="refusal-list">
         <li class="refusal-item">✕ Interrupt your work block for a flash sale.</li>
         <li class="refusal-item">✕ Buzz through dinner for an email that could wait.</li>
         <li class="refusal-item">✕ Turn your run into a public scoreboard.</li>
         <li class="refusal-item">✕ Glow in your bedroom after 9 PM.</li>
       </ul>
+
       <p class="counterpoint">
         The people who truly matter always get through. The rest arrives in batches, on your schedule.
       </p>
     </div>
-    <div class="watch-section3">
-      <img src="/img/model.png" alt="Volt watch" class="watch-image" width="280" height="280" loading="lazy" />
+
+    <div class="section-3-image">
+      <img src="/images/volt-angle-white.png" alt="Volt watch 3/4 view" width="320" height="320" loading="lazy" />
     </div>
   </section>
 
-  <!-- Section 4: The Conviction -->
-  <section class="section section-conviction">
+  <!-- SECTION 4: THE CONVICTION -->
+  <section class="section section-4">
     <div class="conviction-content">
-      <h2 class="conviction-headline">We left nothing for you to configure.</h2>
+      <h2>We left nothing for you to configure.</h2>
+
       <p class="conviction-copy">
         We made the decisions. That's what building something means. One product, one opinion. Made to last years on your wrist — not until next year's launch.
       </p>
+
       <div class="conviction-statements">
         <div class="statement">Ready the day it arrives.</div>
         <div class="statement">No settings screen to get lost in.</div>
@@ -525,13 +576,18 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </section>
 
-  <!-- Section 5: Lead Capture -->
-  <section class="section section-capture">
+  <!-- SECTION 5: LEAD CAPTURE -->
+  <section class="section section-5">
     <div class="capture-content">
-      <h2 class="capture-headline">The first units go to the people who get it.</h2>
+      <div class="product-stamp">
+        <img src="/images/volt-front-white.png" alt="Volt watch stamp" loading="lazy" />
+      </div>
+
+      <h2>The first units go to the people who get it.</h2>
+
       <p class="capture-subline">Leave your email. You'll hear from us before anyone else.</p>
 
-      <div class="form-container">
+      <div class="form-wrapper">
         <form id="leadForm" method="POST" action="/api/subscribe">
           <div class="form-group">
             <label for="email">Email</label>
@@ -546,7 +602,6 @@ import Layout from '../layouts/Layout.astro';
             <div class="form-error" id="emailError"></div>
           </div>
 
-          <!-- Honeypot -->
           <input type="text" name="website" class="form-honeypot" autocomplete="off" />
 
           <button type="submit" class="btn" id="submitBtn">Cut the leash</button>
@@ -562,7 +617,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- FOOTER -->
   <footer>
     <p>VOLT · built to last · contact: <a href="mailto:hello@volt.example.com">hello@volt.example.com</a></p>
   </footer>
@@ -570,11 +625,11 @@ import Layout from '../layouts/Layout.astro';
   <script>
     // Counter animation
     const counterEl = document.querySelector('.counter');
-    let hasAnimated = false;
+    let counterAnimated = false;
 
     const animateCounter = () => {
-      if (hasAnimated) return;
-      hasAnimated = true;
+      if (counterAnimated) return;
+      counterAnimated = true;
 
       let current = 0;
       const target = 94;
@@ -597,15 +652,16 @@ import Layout from '../layouts/Layout.astro';
       animate();
     };
 
-    const observer = new IntersectionObserver((entries) => {
+    const counterObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           animateCounter();
+          counterObserver.unobserve(entry.target);
         }
       });
     });
 
-    observer.observe(counterEl);
+    counterObserver.observe(counterEl);
 
     // Form handling
     const form = document.getElementById('leadForm');
@@ -633,7 +689,6 @@ import Layout from '../layouts/Layout.astro';
       e.preventDefault();
 
       const email = emailInput.value.trim();
-
       emailError.classList.remove('show');
       emailError.textContent = '';
 
@@ -644,29 +699,24 @@ import Layout from '../layouts/Layout.astro';
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = '|/-\\'[Math.floor(Date.now() / 200) % 4];
-
       let spinnerFrame = 0;
       const spinnerInterval = setInterval(() => {
         const spinner = '|/-\\'[spinnerFrame % 4];
         submitBtn.textContent = spinner;
         spinnerFrame++;
-      }, 150);
+      }, 120);
 
       try {
         const utmParams = getUTMParams();
         const response = await fetch('/api/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            ...utmParams,
-          }),
+          body: JSON.stringify({ email, ...utmParams }),
         });
 
         clearInterval(spinnerInterval);
 
-        if (response.ok) {
+        if (response.ok || response.status === 409) {
           form.style.display = 'none';
           successMessage.classList.add('show');
 
@@ -679,17 +729,8 @@ import Layout from '../layouts/Layout.astro';
             window.va('event', { name: 'lead_submit' });
           }
         } else {
-          if (response.status === 409) {
-            form.style.display = 'none';
-            successMessage.classList.add('show');
-            const now = new Date();
-            const dateStr = now.toLocaleDateString();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timestamp.textContent = `position recorded at ${dateStr} ${timeStr}`;
-          } else {
-            emailError.textContent = 'Something went wrong. Try again.';
-            emailError.classList.add('show');
-          }
+          emailError.textContent = 'Something went wrong. Try again.';
+          emailError.classList.add('show');
           submitBtn.disabled = false;
           submitBtn.textContent = 'Cut the leash';
         }
@@ -702,6 +743,7 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
+    // Analytics tracking
     const trackEvent = (eventName) => {
       if (typeof window.va !== 'undefined') {
         window.va('event', { name: eventName });
@@ -728,5 +770,17 @@ import Layout from '../layouts/Layout.astro';
     emailInput.addEventListener('focus', () => {
       trackEvent('form_focus');
     }, { once: true });
+
+    // Font loading verification
+    document.addEventListener('DOMContentLoaded', () => {
+      Promise.all([
+        document.fonts.load('400 1em EB Garamond'),
+        document.fonts.load('400 1em IBM Plex Mono'),
+      ]).then(() => {
+        console.log('Fonts loaded:', Array.from(document.fonts).map(f => f.family + ': ' + f.status));
+      }).catch((err) => {
+        console.warn('Font loading error:', err);
+      });
+    });
   </script>
 </Layout>
