@@ -8,16 +8,17 @@ if (-not (Test-Path $fontsDir)) {
 
 Write-Host "Downloading fonts to $fontsDir..."
 
-# Instrument Serif
-$instrumentSerifUrl = "https://fonts.gstatic.com/s/instrumentserif/v6/jizAREdFvq-B7SLM3BfqQ3szzd.woff2"
-$instrumentSerifPath = "$fontsDir/instrument-serif-regular.woff2"
+# EB Garamond
+$ebGaramondUrl = "https://fonts.gstatic.com/s/ebgaramond/v27/ga6iaw1J5X0T9RW6j9bNVls-jVGf.woff2"
+$ebGaramondPath = "$fontsDir/eb-garamond-regular.woff2"
 
-Write-Host "Downloading Instrument Serif..."
+Write-Host "Downloading EB Garamond..."
 try {
-    Invoke-WebRequest -Uri $instrumentSerifUrl -OutFile $instrumentSerifPath
-    Write-Host "✓ Instrument Serif downloaded"
+    Invoke-WebRequest -Uri $ebGaramondUrl -OutFile $ebGaramondPath -ErrorAction Stop
+    Write-Host "✓ EB Garamond downloaded"
 } catch {
-    Write-Host "✗ Failed to download Instrument Serif: $_"
+    Write-Host "✗ Failed to download EB Garamond"
+    Write-Host "  Manual download: https://fonts.google.com/specimen/EB+Garamond"
 }
 
 # IBM Plex Mono
@@ -26,10 +27,11 @@ $ibmPlexPath = "$fontsDir/ibm-plex-mono-regular.woff2"
 
 Write-Host "Downloading IBM Plex Mono..."
 try {
-    Invoke-WebRequest -Uri $ibmPlexUrl -OutFile $ibmPlexPath
+    Invoke-WebRequest -Uri $ibmPlexUrl -OutFile $ibmPlexPath -ErrorAction Stop
     Write-Host "✓ IBM Plex Mono downloaded"
 } catch {
-    Write-Host "✗ Failed to download IBM Plex Mono: $_"
+    Write-Host "✗ Failed to download IBM Plex Mono"
+    Write-Host "  Manual download: https://fonts.google.com/specimen/IBM+Plex+Mono"
 }
 
-Write-Host "`nDone! Fonts are ready in $fontsDir"
+Write-Host "`nDone!"

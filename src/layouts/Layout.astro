@@ -27,8 +27,8 @@ const { title = 'Volt — the watch that works for you', description = 'Smartwat
 
     <style is:global>
       @font-face {
-        font-family: 'Instrument Serif';
-        src: url('/fonts/instrument-serif-regular.woff2') format('woff2');
+        font-family: 'EB Garamond';
+        src: url('/fonts/eb-garamond-regular.woff2') format('woff2');
         font-weight: 400;
         font-style: normal;
         font-display: swap;
@@ -43,13 +43,13 @@ const { title = 'Volt — the watch that works for you', description = 'Smartwat
       }
 
       :root {
-        --bg-dark: #0D0F0C;
-        --green-primary: #9BB884;
-        --green-light: #C8D8B9;
-        --bg-light: #EDEAE0;
-        --ink-dark: #1A1C18;
+        --bg-paper: #D8D6D0;
+        --bg-paper-dark: #C6C4BD;
+        --bg-dark: #232320;
+        --ink: #2B2A27;
+        --mint: #C7D4B8;
 
-        --font-serif: 'Instrument Serif', serif;
+        --font-serif: 'EB Garamond', 'Garamond', serif;
         --font-mono: 'IBM Plex Mono', monospace;
       }
 
@@ -64,12 +64,26 @@ const { title = 'Volt — the watch that works for you', description = 'Smartwat
       }
 
       body {
-        background-color: var(--bg-dark);
-        color: var(--green-light);
-        font-family: var(--font-mono);
+        background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+        color: var(--ink);
+        font-family: var(--font-serif);
         line-height: 1.6;
         font-size: clamp(14px, 2vw, 16px);
         -webkit-font-smoothing: antialiased;
+        position: relative;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="1" result="noise"/></filter><rect width="100" height="100" fill="transparent" filter="url(%23noise)" opacity="0.06"/></svg>');
+        pointer-events: none;
+        z-index: 1;
+        mix-blend-mode: overlay;
       }
 
       h1, h2, h3 {

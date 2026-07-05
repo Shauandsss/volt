@@ -10,37 +10,62 @@ import Layout from '../layouts/Layout.astro';
       align-items: center;
       justify-content: center;
       padding: 2rem;
+      position: relative;
     }
 
     /* Section 1: Hero */
     .section-hero {
-      background-color: var(--bg-dark);
-      position: relative;
-    }
-
-    .hero-content {
+      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+      flex-direction: column;
       text-align: center;
-      max-width: 720px;
     }
 
     .hero-wordmark {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
-      letter-spacing: 0.3em;
-      color: var(--green-primary);
-      margin-bottom: 3rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
       text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .rainbow-stripe {
+      height: 3px;
+      width: 40px;
+      background: linear-gradient(to right, #FF6B6B 0%, #FF6B6B 16.66%, #FFD93D 16.66%, #FFD93D 33.33%, #6BCB77 33.33%, #6BCB77 50%, #4D96FF 50%, #4D96FF 66.66%, #9D4EDD 66.66%, #9D4EDD 83.33%, #FF006E 83.33%, #FF006E 100%);
+      margin-bottom: -0.3rem;
     }
 
     .hero-headline {
-      margin-bottom: 1.5rem;
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin: 2rem 0 3rem;
+      max-width: 800px;
+    }
+
+    .watch-hero {
+      max-width: 350px;
+      margin: 0 auto;
+      position: relative;
+      transform: rotate(15deg);
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+      margin-bottom: 1rem;
     }
 
     .hero-subline {
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
       font-size: 0.95rem;
-      color: var(--green-light);
+      color: var(--ink);
       line-height: 1.8;
+      letter-spacing: 0.01em;
+      max-width: 600px;
     }
 
     .scroll-indicator {
@@ -48,7 +73,8 @@ import Layout from '../layouts/Layout.astro';
       bottom: 2rem;
       left: 50%;
       transform: translateX(-50%);
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
+      color: var(--ink);
       animation: pulse 1.5s ease-in-out infinite;
     }
 
@@ -57,9 +83,11 @@ import Layout from '../layouts/Layout.astro';
       50% { opacity: 1; }
     }
 
-    /* Section 2: The Cost */
+    /* Section 2: The Cost (Dark) */
     .section-cost {
       background-color: var(--bg-dark);
+      color: var(--bg-paper);
+      flex-direction: column;
     }
 
     .cost-content {
@@ -74,11 +102,11 @@ import Layout from '../layouts/Layout.astro';
     .cost-line {
       font-family: var(--font-serif);
       font-size: clamp(1.5rem, 4vw, 2.25rem);
-      line-height: 1.4;
-      margin-bottom: 2rem;
+      line-height: 1.3;
+      margin-bottom: 2.5rem;
       opacity: 0;
       animation: fadeInUp 0.8s ease-out forwards;
-      color: var(--green-light);
+      color: var(--bg-paper);
     }
 
     .cost-line:nth-child(1) { animation-delay: 0s; }
@@ -98,37 +126,42 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .cost-closer {
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-      color: var(--green-primary);
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      color: var(--bg-paper);
       margin-top: 2rem;
+      letter-spacing: 0.01em;
     }
 
     .counter {
       font-weight: bold;
-      color: var(--green-primary);
+      color: var(--mint);
     }
 
     /* Section 3: The Defection */
     .section-defection {
-      background: linear-gradient(to right, var(--bg-dark), var(--green-primary));
-      gap: 2rem;
+      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+      gap: 3rem;
     }
 
     .defection-content {
       flex: 1;
-      max-width: 400px;
+      max-width: 500px;
     }
 
     .defection-headline {
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
       margin-bottom: 1.5rem;
-      color: var(--ink-dark);
     }
 
     .defection-copy {
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
       font-size: 0.95rem;
-      color: var(--ink-dark);
+      color: var(--ink);
       margin-bottom: 2rem;
       line-height: 1.8;
     }
@@ -140,11 +173,12 @@ import Layout from '../layouts/Layout.astro';
 
     .refusal-item {
       font-family: var(--font-mono);
-      font-size: 0.9rem;
-      color: var(--ink-dark);
+      font-size: 0.85rem;
+      color: var(--ink);
       margin-bottom: 1rem;
       opacity: 0;
       animation: fadeIn 0.6s ease-out forwards;
+      letter-spacing: 0.02em;
     }
 
     .refusal-item:nth-child(1) { animation-delay: 0s; }
@@ -158,28 +192,26 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .counterpoint {
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-      color: var(--ink-dark);
-      border-left: 2px solid var(--ink-dark);
-      padding-left: 1rem;
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      color: var(--ink);
+      border-left: 2px solid var(--ink);
+      padding-left: 1.5rem;
       margin-top: 1.5rem;
+      line-height: 1.8;
     }
 
-    .watch-placeholder {
+    .watch-section3 {
       flex: 1;
-      min-height: 400px;
-      background-color: rgba(26, 28, 24, 0.2);
-      border: 2px solid var(--ink-dark);
-      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-mono);
-      color: var(--ink-dark);
-      font-size: 0.85rem;
-      text-align: center;
-      padding: 2rem;
+      min-height: 400px;
+    }
+
+    .watch-image {
+      max-width: 280px;
+      filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));
     }
 
     @media (max-width: 768px) {
@@ -187,20 +219,16 @@ import Layout from '../layouts/Layout.astro';
         flex-direction: column;
       }
 
-      .defection-content {
-        max-width: 100%;
-      }
-
-      .watch-placeholder {
-        min-height: 300px;
+      .watch-section3 {
         order: -1;
+        min-height: 300px;
       }
     }
 
     /* Section 4: The Conviction */
     .section-conviction {
-      background-color: var(--bg-light);
-      color: var(--ink-dark);
+      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+      flex-direction: column;
     }
 
     .conviction-content {
@@ -209,14 +237,18 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .conviction-headline {
-      color: var(--ink-dark);
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
       margin-bottom: 1.5rem;
     }
 
     .conviction-copy {
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
       font-size: 0.95rem;
-      color: var(--ink-dark);
+      color: var(--ink);
       margin-bottom: 3rem;
       line-height: 1.8;
     }
@@ -229,19 +261,21 @@ import Layout from '../layouts/Layout.astro';
 
     .statement {
       font-family: var(--font-mono);
-      font-size: 0.9rem;
-      color: var(--ink-dark);
+      font-size: 0.85rem;
+      color: var(--ink);
       padding: 1rem 0;
-      border-top: 1px solid var(--ink-dark);
+      border-top: 1px solid var(--ink);
+      letter-spacing: 0.02em;
     }
 
     .statement:last-child {
-      border-bottom: 1px solid var(--ink-dark);
+      border-bottom: 1px solid var(--ink);
     }
 
     /* Section 5: Lead Capture */
     .section-capture {
-      background-color: var(--bg-dark);
+      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+      flex-direction: column;
     }
 
     .capture-content {
@@ -250,14 +284,20 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .capture-headline {
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
       margin-bottom: 1rem;
     }
 
     .capture-subline {
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
       font-size: 0.9rem;
-      color: var(--green-light);
+      color: var(--ink);
       margin-bottom: 2rem;
+      letter-spacing: 0.01em;
     }
 
     .form-container {
@@ -271,37 +311,42 @@ import Layout from '../layouts/Layout.astro';
     .form-group label {
       display: block;
       font-family: var(--font-mono);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       margin-bottom: 0.5rem;
-      color: var(--green-primary);
+      color: var(--ink);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     .form-group input {
       width: 100%;
       padding: 0.75rem 1rem;
       background-color: transparent;
-      border: 1px solid var(--green-primary);
-      color: var(--green-light);
+      border: 1px solid var(--ink);
+      color: var(--ink);
       font-family: var(--font-mono);
       font-size: 0.9rem;
       transition: all 200ms ease-out;
+      letter-spacing: 0.01em;
     }
 
     .form-group input:focus-visible {
-      background-color: rgba(155, 184, 132, 0.1);
-      border-color: var(--green-light);
+      outline: none;
+      border-color: var(--mint);
+      box-shadow: 0 0 0 3px rgba(199, 212, 184, 0.2);
     }
 
     .form-group input::placeholder {
-      color: rgba(200, 216, 185, 0.5);
+      color: rgba(43, 42, 39, 0.4);
     }
 
     .form-error {
       font-family: var(--font-mono);
       font-size: 0.8rem;
-      color: #ff6b6b;
+      color: #c41e3a;
       margin-top: 0.3rem;
       display: none;
+      letter-spacing: 0.02em;
     }
 
     .form-error.show {
@@ -311,20 +356,26 @@ import Layout from '../layouts/Layout.astro';
     .btn {
       width: 100%;
       padding: 0.9rem 1.5rem;
-      background-color: transparent;
-      border: 2px solid var(--green-primary);
-      color: var(--green-primary);
+      background-color: var(--ink);
+      border: 1px solid var(--ink);
+      color: var(--bg-paper);
       font-family: var(--font-mono);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       letter-spacing: 0.05em;
       cursor: pointer;
       transition: all 200ms ease-out;
       text-transform: uppercase;
+      font-weight: 500;
     }
 
     .btn:hover:not(:disabled) {
-      background-color: var(--green-primary);
-      color: var(--ink-dark);
+      background-color: var(--bg-paper);
+      color: var(--ink);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--mint);
+      outline-offset: 2px;
     }
 
     .btn:disabled {
@@ -342,66 +393,74 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .success-message {
-      font-family: var(--font-mono);
-      color: var(--green-light);
+      font-family: var(--font-serif);
+      color: var(--ink);
       margin-bottom: 0.5rem;
     }
 
     .success-timestamp {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--green-primary);
+      font-size: 0.75rem;
+      color: var(--ink);
+      letter-spacing: 0.02em;
     }
 
     .form-note {
-      font-family: var(--font-mono);
+      font-family: var(--font-serif);
       font-size: 0.8rem;
-      color: var(--green-light);
+      color: var(--ink);
       margin-top: 1.5rem;
       opacity: 0.8;
+      letter-spacing: 0.01em;
     }
 
-    /* Honeypot */
     .form-honeypot {
       display: none;
     }
 
     /* Footer */
     footer {
-      background-color: var(--bg-dark);
-      border-top: 1px solid var(--green-primary);
+      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
+      border-top: 1px solid var(--ink);
       padding: 2rem;
       text-align: center;
     }
 
     footer p {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--green-light);
+      font-size: 0.75rem;
+      color: var(--ink);
+      letter-spacing: 0.02em;
     }
 
     footer a {
-      color: var(--green-primary);
+      color: var(--ink);
+      transition: opacity 200ms ease-out;
     }
 
-    /* Scroll animations for Section 2 */
-    .cost-line {
-      scroll-behavior: smooth;
+    footer a:hover {
+      opacity: 0.7;
     }
   </style>
 
   <!-- Section 1: Hero -->
   <section class="section section-hero">
-    <div class="hero-content">
-      <div class="hero-wordmark">VOLT</div>
-      <h1 class="hero-headline">
-        They put a slot machine on your wrist.<br />
-        You called it an upgrade.
-      </h1>
-      <p class="hero-subline">
-        Every buzz is a bet placed on your attention. The house always wins.
-      </p>
+    <div class="hero-wordmark">
+      VOLT
+      <div class="rainbow-stripe"></div>
     </div>
+    <h1 class="hero-headline">
+      They put a slot machine on your wrist.<br />
+      You called it an upgrade.
+    </h1>
+    <div class="watch-hero">
+      <div style="width: 100%; aspect-ratio: 1; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); color: var(--ink); font-size: 0.9rem;">
+        [Watch render]
+      </div>
+    </div>
+    <p class="hero-subline">
+      Every buzz is a bet placed on your attention. The house always wins.
+    </p>
     <div class="scroll-indicator">▼</div>
   </section>
 
@@ -440,7 +499,11 @@ import Layout from '../layouts/Layout.astro';
         The people who truly matter always get through. The rest arrives in batches, on your schedule.
       </p>
     </div>
-    <div class="watch-placeholder">[Product image: Volt watch — retro white case, mono LCD screen]</div>
+    <div class="watch-section3">
+      <div class="watch-image" style="width: 100%; aspect-ratio: 1; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); color: var(--ink); font-size: 0.85rem;">
+        [Watch render]
+      </div>
+    </div>
   </section>
 
   <!-- Section 4: The Conviction -->
@@ -530,7 +593,6 @@ import Layout from '../layouts/Layout.astro';
       animate();
     };
 
-    // Intersection Observer for counter
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -568,22 +630,18 @@ import Layout from '../layouts/Layout.astro';
 
       const email = emailInput.value.trim();
 
-      // Reset error
       emailError.classList.remove('show');
       emailError.textContent = '';
 
-      // Validate
       if (!validateEmail(email)) {
         emailError.textContent = "That email doesn't look right.";
         emailError.classList.add('show');
         return;
       }
 
-      // Disable button
       submitBtn.disabled = true;
       submitBtn.textContent = '|/-\\'[Math.floor(Date.now() / 200) % 4];
 
-      // Spinner animation
       let spinnerFrame = 0;
       const spinnerInterval = setInterval(() => {
         const spinner = '|/-\\'[spinnerFrame % 4];
@@ -605,7 +663,6 @@ import Layout from '../layouts/Layout.astro';
         clearInterval(spinnerInterval);
 
         if (response.ok) {
-          // Success
           form.style.display = 'none';
           successMessage.classList.add('show');
 
@@ -614,12 +671,10 @@ import Layout from '../layouts/Layout.astro';
           const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           timestamp.textContent = `position recorded at ${dateStr} ${timeStr}`;
 
-          // Track event
           if (typeof window.va !== 'undefined') {
             window.va('event', { name: 'lead_submit' });
           }
         } else {
-          // Error (treat duplicate as success per spec)
           if (response.status === 409) {
             form.style.display = 'none';
             successMessage.classList.add('show');
@@ -643,14 +698,12 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    // Track events
     const trackEvent = (eventName) => {
       if (typeof window.va !== 'undefined') {
         window.va('event', { name: eventName });
       }
     };
 
-    // Scroll tracking
     let scroll50 = false;
     let scroll100 = false;
 
@@ -668,7 +721,6 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    // Track form focus
     emailInput.addEventListener('focus', () => {
       trackEvent('form_focus');
     }, { once: true });
