@@ -4,783 +4,843 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout>
   <style>
-    /* Film grain overlay — fixed, full viewport, NO mix-blend-mode */
-    body::after {
-      content: '';
+    /* ===== Film grain: plain-opacity tile, no blend modes ===== */
+    .grain {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
+      background: url('/grain-256.png') repeat;
+      background-size: 256px 256px;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+    }
+
+    section {
+      /* barely-visible vignette lifting each section's center out of the black */
+      background: radial-gradient(ellipse 110% 85% at 50% 50%, var(--black-lift) 0%, var(--black) 72%);
+    }
+
+    h1,
+    h2 {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      color: var(--bone);
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+    }
+
+    /* ===== Reveals: slow fades + small drifts, once ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 800ms ease-out, transform 800ms ease-out;
+      transition-delay: var(--d, 0ms);
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ===== Macro fragments: feathered into the dark, slow 8s breathe ===== */
+    .fragment {
+      overflow: hidden;
+    }
+
+    /* quiet serif asides — same voice as the hero caption */
+    .aside {
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--bone-dim);
+      line-height: 1.6;
+    }
+
+    .fragment img {
       width: 100%;
       height: 100%;
-      background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48ZmlsdGVyIGlkPSJnIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC44IiBudW1PY3RhdmVzPSI0IiByZXN1bHQ9Im4iIC8+PGZlQ29sb3JNYXRyaXggaW49Im4iIHR5cGU9InNhdHVyYXRlIiB2YWx1ZXM9IjAuMyIgLz48L2ZpbHRlcj48L2RlZnM+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIGZpbGw9IiMwMDAwMDAiIGZpbHRlcj0idXJsKCNnKSIgLz48L3N2Zz4=');
-      background-repeat: repeat;
-      background-size: 256px 256px;
-      opacity: 0.06;
-      pointer-events: none;
-      z-index: 99;
+      object-fit: cover;
+      transform: scale(1);
+      transition: transform 8000ms ease-out;
     }
 
-    .section {
+    .fragment.is-visible img {
+      transform: scale(1.04);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+
+      .fragment img,
+      .fragment.is-visible img {
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ===== 1. Hero — pure text in darkness ===== */
+    .hero {
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      position: relative;
-    }
-
-    /* ===== SECTION 1: HERO ===== */
-    .section-1 {
-      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      flex-direction: column;
       text-align: center;
+      position: relative;
+      padding: 4rem 1.5rem 6rem;
     }
 
     .wordmark {
       font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.25em;
-      color: var(--ink);
-      margin-bottom: 0.3rem;
-      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-indent: 0.35em;
     }
 
-    .rainbow-stripe {
-      height: 2px;
-      width: 35px;
-      background: linear-gradient(to right, #FF6B6B 0%, #FFD93D 16%, #6BCB77 33%, #4D96FF 50%, #9D4EDD 66%, #FF006E 100%);
-      margin: 0.4rem auto 0;
+    .rainbow {
+      width: 64px;
+      height: 4px;
+      margin: 8px auto 0;
+      opacity: 0.7;
+      background: linear-gradient(
+        to right,
+        #A6524B 0 16.667%,
+        #BE7245 16.667% 33.333%,
+        #C4A94F 33.333% 50%,
+        #74895F 50% 66.667%,
+        #5B7794 66.667% 83.333%,
+        #756084 83.333% 100%
+      );
     }
 
-    h1 {
-      font-family: var(--font-serif);
-      font-size: clamp(2rem, 7vw, 3.5rem);
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-      margin: 1.5rem 0 2.5rem;
-      max-width: 850px;
-    }
-
-    .hero-watch {
-      max-width: 380px;
-      margin: 0 auto 2rem;
-      position: relative;
-      transform: rotate(8deg);
-      filter: drop-shadow(0 30px 40px rgba(0,0,0,0.18));
-    }
-
-    .hero-watch img {
-      width: 100%;
-      height: auto;
-      display: block;
+    .hero h1 {
+      max-width: 17ch;
+      margin-top: 3.5rem;
     }
 
     .hero-caption {
-      font-family: var(--font-serif);
-      font-size: 0.95rem;
       font-style: italic;
-      color: var(--ink);
-      line-height: 1.7;
-      max-width: 650px;
-      margin: 0 auto;
+      font-size: clamp(1.1rem, 1.7vw, 1.35rem);
+      color: var(--bone-dim);
+      margin-top: 2.8rem;
+      max-width: 44ch;
     }
 
     .scroll-cue {
       position: absolute;
-      bottom: 2rem;
+      bottom: 28px;
       left: 50%;
       transform: translateX(-50%);
-      font-family: var(--font-serif);
-      color: var(--ink);
-      animation: pulse 1.5s ease-out infinite;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      animation: cue-pulse 2.4s ease-out infinite;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
+    @keyframes cue-pulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.8; }
     }
 
-    /* ===== SECTION 2: THE COST (DARK SPREAD) ===== */
-    .section-2 {
-      background: linear-gradient(to right, var(--bg-dark-navy) 0%, var(--bg-dark-navy) 55%, rgba(17,21,34,0.3) 100%);
-      color: var(--bg-paper);
-      flex-direction: column;
-      text-align: center;
+    /* ===== 2. The cost — the waking LCD ===== */
+    .cost {
+      min-height: 100vh;
       position: relative;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 7rem 1.5rem;
     }
 
-    .section-2::before {
-      content: '';
+    .cost-photo {
       position: absolute;
-      right: 0;
       top: 0;
-      width: 50%;
+      right: -2%;
+      width: 47%;
       height: 100%;
-      background-image: url('/images/volt-titanium-dark.png');
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
-      opacity: 0.3;
-      z-index: 0;
+    }
+
+    .cost-photo img {
+      /* feathered to black on all sides; center on the LCD glow */
+      -webkit-mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, #000 32%, transparent 74%);
+      mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, #000 32%, transparent 74%);
+    }
+
+    .cost-tint {
+      /* the screen's glow spilling faintly onto the text side */
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 45% 40% at 62% 50%, rgba(199, 212, 184, 0.05), transparent 70%);
       pointer-events: none;
     }
 
-    @media (max-width: 768px) {
-      .section-2::before {
-        opacity: 0.15;
-        width: 100%;
-      }
-    }
-
-    .cost-content {
-      max-width: 700px;
+    .cost-inner {
+      width: min(1200px, 100%);
+      margin: 0 auto;
       position: relative;
       z-index: 1;
     }
 
     .cost-lines {
-      margin-bottom: 2.5rem;
+      max-width: 52%;
     }
 
     .cost-line {
-      font-family: var(--font-serif);
-      font-size: clamp(1.4rem, 3.5vw, 2rem);
-      line-height: 1.3;
-      margin-bottom: 2rem;
+      color: var(--bone);
+      font-size: clamp(1.6rem, 3vw, 2.6rem);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin-bottom: 2.2rem;
       opacity: 0;
-      animation: fadeInUpCost 0.6s ease-out forwards;
-      color: var(--bg-paper);
+      transform: translateY(16px);
+      transition: opacity 800ms ease-out, transform 800ms ease-out;
     }
 
-    .cost-line:nth-child(1) { animation-delay: 0s; }
-    .cost-line:nth-child(2) { animation-delay: 0.25s; }
-    .cost-line:nth-child(3) { animation-delay: 0.5s; }
-    .cost-line:nth-child(4) { animation-delay: 0.75s; }
-
-    @keyframes fadeInUpCost {
-      from {
-        opacity: 0;
-        transform: translateY(15px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .cost-line.on {
+      opacity: 1;
+      transform: none;
     }
 
-    .cost-closer {
-      font-family: var(--font-serif);
-      font-size: 0.9rem;
-      color: var(--bg-paper);
-      margin-top: 1.5rem;
-      letter-spacing: 0.005em;
+    .cost-line.on.dim {
+      opacity: 0.35;
     }
 
-    .counter {
-      font-weight: 500;
-      color: var(--mint);
-    }
-
-    /* ===== SECTION 3: THE DEFECTION ===== */
-    .section-3 {
-      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      gap: 4rem;
-    }
-
-    .defection-content {
-      flex: 1;
-      max-width: 480px;
-    }
-
-    h2 {
-      font-family: var(--font-serif);
-      font-size: clamp(1.6rem, 5vw, 2.3rem);
-      line-height: 1.2;
-      letter-spacing: -0.015em;
-      color: var(--ink);
-      margin-bottom: 1.2rem;
-    }
-
-    .defection-copy {
-      font-family: var(--font-serif);
-      font-size: 0.95rem;
-      color: var(--ink);
-      margin-bottom: 1.8rem;
-      line-height: 1.8;
-    }
-
-    .refusal-list {
-      list-style: none;
-      margin-bottom: 1.8rem;
-    }
-
-    .refusal-item {
+    .cost-count {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--ink);
-      margin-bottom: 0.85rem;
-      opacity: 0;
-      animation: fadeInItem 0.5s ease-out forwards;
-      letter-spacing: 0.015em;
+      font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+      letter-spacing: 0.04em;
+      color: var(--bone);
+      opacity: 0.85;
+      margin-top: 3.5rem;
+      max-width: 52%;
+      line-height: 1.9;
     }
 
-    .refusal-item:nth-child(1) { animation-delay: 0s; }
-    .refusal-item:nth-child(2) { animation-delay: 0.1s; }
-    .refusal-item:nth-child(3) { animation-delay: 0.2s; }
-    .refusal-item:nth-child(4) { animation-delay: 0.3s; }
-
-    @keyframes fadeInItem {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .cost-count .num {
+      color: var(--mint);
+      font-size: 1.35em;
+      font-weight: 500;
     }
 
-    .counterpoint {
-      font-family: var(--font-serif);
-      font-size: 0.95rem;
-      color: var(--ink);
-      border-left: 2px solid var(--ink);
-      padding-left: 1.5rem;
-      margin-top: 1.5rem;
-      line-height: 1.8;
-    }
+    @media (prefers-reduced-motion: reduce) {
+      .cost-line {
+        transition: none;
+        opacity: 1;
+        transform: none;
+      }
 
-    .section-3-image {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 500px;
-    }
-
-    .section-3-image img {
-      max-width: 320px;
-      height: auto;
-      display: block;
-      filter: drop-shadow(0 20px 35px rgba(0,0,0,0.15));
+      .cost-line.dim {
+        opacity: 0.35;
+      }
     }
 
     @media (max-width: 768px) {
-      .section-3 {
-        flex-direction: column;
+      .cost-photo {
+        right: 0;
+        width: 100%;
       }
 
-      .section-3-image {
-        order: -1;
-        min-height: 350px;
+      /* keep the label legible: dim the photo itself, not its caption */
+      .cost-photo img {
+        opacity: 0.22;
+      }
+
+      .cost-tint {
+        display: none;
+      }
+
+      .cost-lines,
+      .cost-count {
+        max-width: 100%;
+      }
+
+      /* readability over the glow */
+      .cost-line {
+        text-shadow: 0 2px 24px rgba(12, 14, 11, 0.95), 0 0 8px rgba(12, 14, 11, 0.85);
+      }
+
+      .cost-line.on.dim {
+        opacity: 0.55;
+      }
+
+      .cost-count {
+        text-shadow: 0 2px 24px rgba(12, 14, 11, 0.95), 0 0 8px rgba(12, 14, 11, 0.85);
+      }
+
+    }
+
+    /* ===== 3. The refusal — the knurled button ===== */
+    .refusal {
+      position: relative;
+      overflow: hidden;
+      padding: 7rem 1.5rem;
+    }
+
+    .refusal-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .refusal-photo {
+      align-self: start;
+      /* let the mesh-strap corner run toward the section's top edge */
+      margin-top: -7rem;
+      width: 118%;
+      margin-left: -9%;
+      aspect-ratio: 875 / 1216;
+      max-height: 130vh;
+    }
+
+    .refusal-photo img {
+      -webkit-mask-image: radial-gradient(ellipse 60% 52% at 52% 48%, #000 34%, transparent 76%);
+      mask-image: radial-gradient(ellipse 60% 52% at 52% 48%, #000 34%, transparent 76%);
+    }
+
+    .refusals {
+      list-style: none;
+      margin-top: 2.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    .refusals li {
+      margin-bottom: 1rem;
+    }
+
+    .refusals .x {
+      margin-right: 0.75rem;
+      color: var(--bone-dim);
+    }
+
+    .matter {
+      border-left: 2px solid var(--mint);
+      padding-left: 1.4rem;
+      margin-top: 2.8rem;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      max-width: 44ch;
+    }
+
+    @media (max-width: 768px) {
+      .refusal {
+        padding-top: 0;
+      }
+
+      .refusal-inner {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      .refusal-photo {
+        margin-top: 0;
+        aspect-ratio: auto;
+        height: 55vh;
+        max-height: none;
       }
     }
 
-    /* ===== SECTION 4: THE CONVICTION ===== */
-    .section-4 {
-      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      flex-direction: column;
+    /* ===== 4. The conviction — no image, deliberately ===== */
+    .conviction {
+      padding: 10rem 1.5rem;
     }
 
-    .conviction-content {
-      max-width: 700px;
+    .conviction-inner {
+      max-width: 580px;
+      margin: 0 auto;
       text-align: center;
     }
 
     .conviction-copy {
-      font-family: var(--font-serif);
-      font-size: 0.95rem;
-      color: var(--ink);
-      margin-bottom: 2.5rem;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--bone);
+      margin: 2rem auto 3.5rem;
+      max-width: 46ch;
+    }
+
+    .conviction-copy p + p {
+      margin-top: 1.4rem;
+    }
+
+    .creed {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      color: var(--bone-dim);
+      padding: 1.2rem 0;
+      border-top: 1px solid rgba(237, 234, 224, 0.2);
+    }
+
+    .creed:last-child {
+      border-bottom: 1px solid rgba(237, 234, 224, 0.2);
+    }
+
+    /* ===== 5. The line in the sand — lead capture ===== */
+    .capture {
+      position: relative;
+      overflow: hidden;
+      padding: 8rem 1.5rem;
+    }
+
+    .capture-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 6fr 5fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .capture-copy {
+      max-width: 520px;
+    }
+
+    /* the product turning its face away, screen sliver at form height */
+    .capture-photo {
+      aspect-ratio: 875 / 1216;
+      max-height: 110vh;
+    }
+
+    .capture-photo img {
+      -webkit-mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
+      mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
+    }
+
+    .capture-sub {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      color: var(--bone-dim);
+      margin-top: 1.6rem;
       line-height: 1.8;
     }
 
-    .conviction-statements {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    .coupon {
+      margin-top: 2.6rem;
     }
 
-    .statement {
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--ink);
-      padding: 1rem 0;
-      border-top: 1px solid var(--ink);
-      letter-spacing: 0.015em;
-    }
-
-    .statement:last-child {
-      border-bottom: 1px solid var(--ink);
-    }
-
-    /* ===== SECTION 5: LEAD CAPTURE ===== */
-    .section-5 {
-      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      flex-direction: column;
-    }
-
-    .capture-content {
-      max-width: 520px;
-      text-align: center;
-    }
-
-    .product-stamp {
-      max-width: 100px;
-      margin: 0 auto 1.5rem;
-      opacity: 0.9;
-    }
-
-    .product-stamp img {
+    .coupon input[type='email'] {
       width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .capture-subline {
-      font-family: var(--font-serif);
+      padding: 14px;
+      background: transparent;
+      border: 1px solid rgba(237, 234, 224, 0.4);
+      font-family: var(--font-mono);
       font-size: 0.9rem;
-      color: var(--ink);
-      margin-bottom: 2rem;
-      letter-spacing: 0.005em;
+      letter-spacing: 0.02em;
+      color: var(--bone);
     }
 
-    .form-wrapper {
-      margin-bottom: 1.5rem;
+    .coupon input[type='email']::placeholder {
+      color: rgba(237, 234, 224, 0.3);
     }
 
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-group label {
-      display: block;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      margin-bottom: 0.5rem;
-      color: var(--ink);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .form-group input {
+    .coupon button {
       width: 100%;
-      padding: 0.8rem 1rem;
-      background-color: transparent;
-      border: 1px solid var(--ink);
-      color: var(--ink);
+      margin-top: 12px;
+      padding: 14px;
+      background: var(--bone);
+      border: 1px solid var(--bone);
+      color: var(--black);
       font-family: var(--font-mono);
       font-size: 0.85rem;
-      transition: all 200ms ease-out;
-      letter-spacing: 0.01em;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
     }
 
-    .form-group input::placeholder {
-      color: rgba(43, 42, 39, 0.35);
+    .coupon button:disabled {
+      opacity: 0.6;
+      cursor: wait;
     }
 
-    .form-group input:focus-visible {
-      outline: none;
-      border-color: var(--ink);
-      box-shadow: 0 0 0 3px rgba(199, 212, 184, 0.3);
+    .honeypot {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
     }
 
     .form-error {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: #b80000;
-      margin-top: 0.4rem;
       display: none;
-      letter-spacing: 0.015em;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      color: #C08A7E;
+      margin-top: 10px;
     }
 
     .form-error.show {
       display: block;
     }
 
-    .btn {
-      width: 100%;
-      padding: 0.9rem 1.5rem;
-      background-color: var(--ink);
-      border: 1px solid var(--ink);
-      color: var(--bg-paper);
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      letter-spacing: 0.07em;
-      cursor: pointer;
-      transition: all 200ms ease-out;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-
-    .btn:hover:not(:disabled) {
-      background-color: transparent;
-      color: var(--ink);
-    }
-
-    .btn:focus-visible {
-      outline: 2px solid var(--mint);
-      outline-offset: 2px;
-    }
-
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .form-honeypot {
-      display: none;
-    }
-
     .form-success {
       display: none;
-      animation: fadeIn 0.5s ease-out;
+      border: 1px solid rgba(237, 234, 224, 0.4);
+      padding: 1.6rem 1.4rem;
+      margin-top: 2.6rem;
+      font-size: 1.05rem;
+      line-height: 1.6;
     }
 
     .form-success.show {
       display: block;
     }
 
-    .success-message {
-      font-family: var(--font-serif);
-      color: var(--ink);
-      margin-bottom: 0.4rem;
-    }
-
-    .success-timestamp {
+    .fine-print {
       font-family: var(--font-mono);
       font-size: 0.75rem;
-      color: var(--ink);
-      letter-spacing: 0.015em;
+      letter-spacing: 0.04em;
+      color: var(--bone-dim);
+      margin-top: 1.6rem;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    @media (max-width: 768px) {
+      .capture-inner {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      .capture-photo {
+        order: -1;
+        aspect-ratio: auto;
+        height: 50vh;
+        max-height: none;
+      }
     }
 
-    .form-note {
-      font-family: var(--font-serif);
-      font-size: 0.8rem;
-      color: var(--ink);
-      margin-top: 1.2rem;
-      opacity: 0.75;
-      letter-spacing: 0.005em;
-    }
-
-    /* ===== FOOTER ===== */
+    /* ===== Footer ===== */
     footer {
-      background: linear-gradient(to bottom, var(--bg-paper), var(--bg-paper-dark));
-      border-top: 1px solid var(--ink);
-      padding: 2rem;
+      padding: 3rem 1.5rem;
       text-align: center;
-      position: relative;
-      z-index: 10;
-    }
-
-    footer p {
       font-family: var(--font-mono);
       font-size: 0.7rem;
-      color: var(--ink);
-      letter-spacing: 0.015em;
-    }
-
-    footer a {
-      color: var(--ink);
-      transition: opacity 200ms ease-out;
-    }
-
-    footer a:hover {
-      opacity: 0.6;
+      letter-spacing: 0.12em;
+      opacity: 0.4;
     }
   </style>
 
-  <!-- SECTION 1: HERO -->
-  <section class="section section-1">
-    <div class="wordmark">
-      VOLT
-      <div class="rainbow-stripe"></div>
-    </div>
+  <div class="grain" aria-hidden="true"></div>
 
-    <h1>
-      They put a slot machine on your wrist.<br />
-      You called it an upgrade.
-    </h1>
+  <main>
+    <!-- 1. Hero — the accusation. The darkness is the hero. -->
+    <section class="hero">
+      <header class="reveal">
+        <p class="wordmark">VOLT</p>
+        <div class="rainbow" aria-hidden="true"></div>
+      </header>
 
-    <div class="hero-watch">
-      <img src="/images/volt-front-white.png" alt="Volt watch front view" width="380" height="380" loading="eager" />
-    </div>
+      <h1 class="reveal" style="--d: 150ms">
+        They put a slot machine on your wrist. You called it an upgrade.
+      </h1>
 
-    <p class="hero-caption">
-      Every buzz is a bet placed on your attention. The house always wins.
-    </p>
+      <p class="hero-caption reveal" style="--d: 300ms">
+        Every buzz is a bet placed on your attention. The house always wins.
+      </p>
 
-    <div class="scroll-cue">▼</div>
-  </section>
+      <div class="scroll-cue" aria-hidden="true">▼</div>
+    </section>
 
-  <!-- SECTION 2: THE COST (DARK INK SPREAD) -->
-  <section class="section section-2">
-    <div class="cost-content">
-      <div class="cost-lines">
-        <div class="cost-line">The report you never finished.</div>
-        <div class="cost-line">The dinner you only half attended.</div>
-        <div class="cost-line">The run cut short at mile two.</div>
-        <div class="cost-line">The sleep you traded for a glow at 11:47 PM.</div>
+    <!-- 2. The cost — the waking LCD as temptation -->
+    <section class="cost">
+      <div class="cost-photo fragment reveal">
+        <img src="/images/teaser-screen.jpg" alt="" aria-hidden="true" loading="lazy" />
       </div>
+      <div class="cost-tint" aria-hidden="true"></div>
 
-      <p class="cost-closer">
-        You checked your wrist <span class="counter">0</span> times today. How many were worth it?
-      </p>
-    </div>
-  </section>
+      <div class="cost-inner">
+        <div class="cost-lines" id="costLines">
+          <p class="cost-line">The report you never finished.</p>
+          <p class="cost-line">The dinner you only half attended.</p>
+          <p class="cost-line">The run cut short at mile two.</p>
+          <p class="cost-line">The sleep you traded for a glow at 11:47 PM.</p>
+        </div>
 
-  <!-- SECTION 3: THE DEFECTION -->
-  <section class="section section-3">
-    <div class="defection-content">
-      <h2>
-        Volt. The watch that works for you.<br />
-        Not for them.
-      </h2>
-
-      <p class="defection-copy">
-        Your smartwatch answers to any app that pays for your attention. Volt answers to you. Time, goals, silence. Everything else waits.
-      </p>
-
-      <ul class="refusal-list">
-        <li class="refusal-item">✕ Interrupt your work block for a flash sale.</li>
-        <li class="refusal-item">✕ Buzz through dinner for an email that could wait.</li>
-        <li class="refusal-item">✕ Turn your run into a public scoreboard.</li>
-        <li class="refusal-item">✕ Glow in your bedroom after 9 PM.</li>
-      </ul>
-
-      <p class="counterpoint">
-        The people who truly matter always get through. The rest arrives in batches, on your schedule.
-      </p>
-    </div>
-
-    <div class="section-3-image">
-      <img src="/images/volt-angle-white.png" alt="Volt watch 3/4 view" width="320" height="320" loading="lazy" />
-    </div>
-  </section>
-
-  <!-- SECTION 4: THE CONVICTION -->
-  <section class="section section-4">
-    <div class="conviction-content">
-      <h2>We left nothing for you to configure.</h2>
-
-      <p class="conviction-copy">
-        We made the decisions. That's what building something means. One product, one opinion. Made to last years on your wrist — not until next year's launch.
-      </p>
-
-      <div class="conviction-statements">
-        <div class="statement">Ready the day it arrives.</div>
-        <div class="statement">No settings screen to get lost in.</div>
-        <div class="statement">No annual upgrade to chase.</div>
+        <p class="cost-count" id="costCount">
+          You checked your wrist <span class="num" id="counter">0</span> times today. How many were worth it?
+        </p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- SECTION 5: LEAD CAPTURE -->
-  <section class="section section-5">
-    <div class="capture-content">
-      <div class="product-stamp">
-        <img src="/images/volt-front-white.png" alt="Volt watch stamp" loading="lazy" />
+    <!-- 3. The refusal — one physical control beside a list of refusals -->
+    <section class="refusal">
+      <div class="refusal-inner">
+        <div class="refusal-photo fragment reveal">
+          <img src="/images/teaser-button.jpg" alt="" aria-hidden="true" loading="lazy" />
+        </div>
+
+        <div>
+          <h2 class="reveal">Something is coming that refuses to behave.</h2>
+
+          <p class="aside reveal" style="--d: 100ms; margin-top: 1.4rem">
+            One honest button. Machined, not rendered.
+          </p>
+
+          <ul class="refusals">
+            <li class="reveal" style="--d: 150ms"><span class="x">✕</span>Interrupt your work block for a flash sale.</li>
+            <li class="reveal" style="--d: 250ms"><span class="x">✕</span>Buzz through dinner for an email that could wait.</li>
+            <li class="reveal" style="--d: 350ms"><span class="x">✕</span>Turn your run into a public scoreboard.</li>
+            <li class="reveal" style="--d: 450ms"><span class="x">✕</span>Glow in your bedroom after 9 PM.</li>
+          </ul>
+
+          <p class="matter reveal" style="--d: 550ms">
+            The people who truly matter always get through. The rest arrives in batches, on your schedule.
+          </p>
+        </div>
       </div>
+    </section>
 
-      <h2>The first units go to the people who get it.</h2>
+    <!-- 4. The conviction — the rest beat. No image, deliberately. -->
+    <section class="conviction">
+      <div class="conviction-inner">
+        <h2 class="reveal">We left nothing for you to configure.</h2>
 
-      <p class="capture-subline">Leave your email. You'll hear from us before anyone else.</p>
+        <div class="conviction-copy reveal" style="--d: 100ms">
+          <p>
+            We made the decisions. That's what building something means. One product, one opinion.
+            Made to last years on your wrist — not until next year's launch.
+          </p>
+          <p>
+            Every smartwatch is the same soulless slab of glass. Volt is an object — corners you can
+            feel, a texture that catches light, a face of its own. Designed the way things used to be
+            designed: like they mattered.
+          </p>
+        </div>
 
-      <div class="form-wrapper">
-        <form id="leadForm" method="POST" action="/api/subscribe">
-          <div class="form-group">
-            <label for="email">Email</label>
+        <div class="reveal" style="--d: 200ms">
+          <p class="creed">Ready the day it arrives.</p>
+          <p class="creed">Drawn by hand before it was ever a file.</p>
+          <p class="creed">No annual upgrade to chase.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. The line in the sand — the product turns its face away -->
+    <section class="capture">
+      <div class="capture-inner">
+        <div class="capture-copy">
+          <h2 class="reveal">The first units go to the people who get it.</h2>
+
+          <p class="capture-sub reveal" style="--d: 150ms">
+            You haven't seen it. That's the point. Leave your email — you'll see it first.
+          </p>
+
+          <form class="coupon reveal" style="--d: 300ms" id="leadForm" method="POST" action="/api/subscribe" novalidate>
+            <label class="honeypot" aria-hidden="true">
+              Leave this field empty
+              <input type="text" name="website" tabindex="-1" autocomplete="off" />
+            </label>
+
             <input
               type="email"
               id="email"
               name="email"
               placeholder="you@example.com"
+              autocomplete="email"
               required
-              aria-required="true"
+              aria-describedby="emailError"
             />
-            <div class="form-error" id="emailError"></div>
+            <p class="form-error" id="emailError" role="alert"></p>
+
+            <button type="submit" id="submitBtn">Cut the leash</button>
+          </form>
+
+          <div class="form-success" id="formSuccess" role="status">
+            You're on the list. Unit by unit, we'll notify in order of arrival. You'll see it before anyone.
           </div>
 
-          <input type="text" name="website" class="form-honeypot" autocomplete="off" />
+          <p class="fine-print reveal" style="--d: 400ms">
+            One email when Volt opens. No others. We promise little on purpose.
+          </p>
 
-          <button type="submit" class="btn" id="submitBtn">Cut the leash</button>
-        </form>
+          <p class="aside reveal" style="--d: 500ms; margin-top: 2.6rem">
+            It doesn't need to face you to be beautiful.
+          </p>
+        </div>
 
-        <div class="form-success" id="successMessage">
-          <p class="success-message">You're on the list. Unit by unit, we'll notify in order of arrival.</p>
-          <p class="success-timestamp" id="timestamp"></p>
+        <div class="capture-photo fragment reveal">
+          <img src="/images/teaser-profile.jpg" alt="" aria-hidden="true" loading="lazy" />
         </div>
       </div>
+    </section>
+  </main>
 
-      <p class="form-note">One email when Volt opens. No others. We promise little on purpose.</p>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <p>VOLT · built to last · contact: <a href="mailto:hello@volt.example.com">hello@volt.example.com</a></p>
-  </footer>
+  <footer>VOLT · built to last</footer>
 
   <script>
-    // Counter animation
-    const counterEl = document.querySelector('.counter');
-    let counterAnimated = false;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const animateCounter = () => {
-      if (counterAnimated) return;
-      counterAnimated = true;
+    // ---- Reveals + fragment breathe: once, via IntersectionObserver ----
+    const revealEls = document.querySelectorAll('.reveal');
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      revealEls.forEach((el) => el.classList.add('is-visible'));
+    } else {
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      );
+      revealEls.forEach((el) => io.observe(el));
+    }
 
-      let current = 0;
-      const target = 94;
-      const duration = 1200;
-      const start = Date.now();
-
-      const animate = () => {
-        const elapsed = Date.now() - start;
-        const progress = Math.min(elapsed / duration, 1);
-        current = Math.floor(target * progress);
-        counterEl.textContent = current;
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          counterEl.textContent = target;
-        }
-      };
-
-      animate();
+    // ---- Cost lines: one at a time, previous dims to 35% ----
+    const lines = Array.from(document.querySelectorAll('.cost-line'));
+    const showLines = () => {
+      if (reducedMotion) {
+        lines.forEach((line, i) => {
+          line.classList.add('on');
+          if (i < lines.length - 1) line.classList.add('dim');
+        });
+        return;
+      }
+      lines.forEach((line, i) => {
+        setTimeout(() => {
+          line.classList.add('on');
+          if (i > 0) lines[i - 1].classList.add('dim');
+        }, i * 900);
+      });
     };
 
-    const counterObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          animateCounter();
-          counterObserver.unobserve(entry.target);
+    const linesIo = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          linesIo.disconnect();
+          showLines();
         }
-      });
-    });
+      },
+      { threshold: 0.3 }
+    );
+    linesIo.observe(document.getElementById('costLines'));
 
-    counterObserver.observe(counterEl);
+    // ---- Counter: 0 → 94 over 1.2s, once ----
+    const counterEl = document.getElementById('counter');
+    const runCounter = () => {
+      if (reducedMotion) {
+        counterEl.textContent = '94';
+        return;
+      }
+      const start = performance.now();
+      const tick = (now) => {
+        const progress = Math.min((now - start) / 1200, 1);
+        counterEl.textContent = String(Math.round(94 * progress));
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
 
-    // Form handling
+    const countIo = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          countIo.disconnect();
+          runCounter();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    countIo.observe(document.getElementById('costCount'));
+
+    // ---- Coupon form ----
     const form = document.getElementById('leadForm');
     const emailInput = document.getElementById('email');
     const emailError = document.getElementById('emailError');
     const submitBtn = document.getElementById('submitBtn');
-    const successMessage = document.getElementById('successMessage');
-    const timestamp = document.getElementById('timestamp');
+    const formSuccess = document.getElementById('formSuccess');
 
-    const validateEmail = (email) => {
-      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return regex.test(email);
-    };
-
-    const getUTMParams = () => {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        utm_source: params.get('utm_source') || '',
-        utm_medium: params.get('utm_medium') || '',
-        utm_campaign: params.get('utm_campaign') || '',
-      };
+    const showSuccess = () => {
+      form.style.display = 'none';
+      formSuccess.classList.add('show');
     };
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const email = emailInput.value.trim();
-      emailError.classList.remove('show');
       emailError.textContent = '';
+      emailError.classList.remove('show');
 
-      if (!validateEmail(email)) {
+      const email = emailInput.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         emailError.textContent = "That email doesn't look right.";
         emailError.classList.add('show');
         return;
       }
 
+      // Bots that fill the honeypot get a quiet success and no request.
+      if (form.elements.website.value) {
+        showSuccess();
+        return;
+      }
+
       submitBtn.disabled = true;
-      let spinnerFrame = 0;
-      const spinnerInterval = setInterval(() => {
-        const spinner = '|/-\\'[spinnerFrame % 4];
-        submitBtn.textContent = spinner;
-        spinnerFrame++;
-      }, 120);
 
       try {
-        const utmParams = getUTMParams();
+        const params = new URLSearchParams(window.location.search);
         const response = await fetch('/api/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, ...utmParams }),
+          body: JSON.stringify({
+            email,
+            utm_source: params.get('utm_source') || '',
+            utm_medium: params.get('utm_medium') || '',
+            utm_campaign: params.get('utm_campaign') || '',
+          }),
         });
 
-        clearInterval(spinnerInterval);
-
+        // 409 = already on the list; treated as success.
         if (response.ok || response.status === 409) {
-          form.style.display = 'none';
-          successMessage.classList.add('show');
-
-          const now = new Date();
-          const dateStr = now.toLocaleDateString();
-          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          timestamp.textContent = `position recorded at ${dateStr} ${timeStr}`;
-
-          if (typeof window.va !== 'undefined') {
-            window.va('event', { name: 'lead_submit' });
-          }
+          showSuccess();
         } else {
           emailError.textContent = 'Something went wrong. Try again.';
           emailError.classList.add('show');
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Cut the leash';
         }
-      } catch (err) {
-        clearInterval(spinnerInterval);
+      } catch {
         emailError.textContent = 'Something went wrong. Try again.';
         emailError.classList.add('show');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Cut the leash';
       }
     });
 
-    // Analytics tracking
-    const trackEvent = (eventName) => {
-      if (typeof window.va !== 'undefined') {
-        window.va('event', { name: eventName });
-      }
-    };
-
-    let scroll50 = false;
-    let scroll100 = false;
-
-    window.addEventListener('scroll', () => {
-      const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-
-      if (scrollPercent >= 50 && !scroll50) {
-        scroll50 = true;
-        trackEvent('scroll_50');
-      }
-
-      if (scrollPercent >= 100 && !scroll100) {
-        scroll100 = true;
-        trackEvent('scroll_100');
-      }
-    });
-
-    emailInput.addEventListener('focus', () => {
-      trackEvent('form_focus');
-    }, { once: true });
-
-    // Font loading verification
-    document.addEventListener('DOMContentLoaded', () => {
-      Promise.all([
-        document.fonts.load('400 1em EB Garamond'),
-        document.fonts.load('400 1em IBM Plex Mono'),
-      ]).then(() => {
-        console.log('Fonts loaded:', Array.from(document.fonts).map(f => f.family + ': ' + f.status));
-      }).catch((err) => {
-        console.warn('Font loading error:', err);
-      });
+    // ---- Font verification (acceptance: no serif fallback) ----
+    document.fonts.ready.then(() => {
+      const garamond = document.fonts.check('1rem "EB Garamond"');
+      const plex = document.fonts.check('1rem "IBM Plex Mono"');
+      console.log(`[volt] EB Garamond loaded: ${garamond} · IBM Plex Mono loaded: ${plex}`);
+      if (!garamond || !plex) console.warn('[volt] FONT FALLBACK IN EFFECT — check /fonts/*.woff2');
     });
   </script>
 </Layout>

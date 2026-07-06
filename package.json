@@ -9,8 +9,8 @@
     "setup": "node scripts/init-db.js"
   },
   "dependencies": {
+    "@astrojs/node": "^8.3.4",
     "astro": "^4.0.0",
-    "@astrojs/node": "^7.0.0",
     "dotenv": "^16.0.0",
     "pg": "^8.11.0"
   },
