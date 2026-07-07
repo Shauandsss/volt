@@ -325,19 +325,27 @@ import Layout from '../layouts/Layout.astro';
 
     .refusals {
       list-style: none;
-      margin-top: 2.6rem;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
+      margin-top: 2.8rem;
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 1.05rem;
+      line-height: 2;
+      max-width: 38ch;
+      color: var(--bone);
     }
 
     .refusals li {
-      margin-bottom: 1rem;
+      padding: 1.6rem 0;
+      border-bottom: 1px solid rgba(237, 234, 224, 0.12);
     }
 
-    .refusals .x {
-      margin-right: 0.75rem;
-      color: var(--bone-dim);
+    .refusals li:first-child {
+      border-top: 1px solid rgba(237, 234, 224, 0.12);
+    }
+
+    .refusals strong {
+      font-weight: 500;
+      font-style: normal;
     }
 
     .matter {
@@ -606,10 +614,10 @@ import Layout from '../layouts/Layout.astro';
           </p>
 
           <ul class="refusals">
-            <li class="reveal" style="--d: 150ms"><span class="x">✕</span>Interrupt your work block for a flash sale.</li>
-            <li class="reveal" style="--d: 250ms"><span class="x">✕</span>Buzz through dinner for an email that could wait.</li>
-            <li class="reveal" style="--d: 350ms"><span class="x">✕</span>Turn your run into a public scoreboard.</li>
-            <li class="reveal" style="--d: 450ms"><span class="x">✕</span>Glow in your bedroom after 9 PM.</li>
+            <li class="reveal" style="--d: 150ms"><strong>Never</strong> interrupt your work block for a flash sale.</li>
+            <li class="reveal" style="--d: 250ms"><strong>Never</strong> buzz through dinner for an email that could wait.</li>
+            <li class="reveal" style="--d: 350ms"><strong>Never</strong> turn your run into a public scoreboard.</li>
+            <li class="reveal" style="--d: 450ms"><strong>Never</strong> glow in your bedroom after 9 PM.</li>
           </ul>
 
           <p class="matter reveal" style="--d: 550ms">
