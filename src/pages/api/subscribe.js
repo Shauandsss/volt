@@ -73,32 +73,50 @@ export async function POST({ request }) {
       },
     });
 
-    // Insert email
+    // Insert email; the waitlist position ("unit #") is the row's place in line
     try {
-      await pool.query(
+      const inserted = await pool.query(
         `INSERT INTO leads (email, utm_source, utm_medium, utm_campaign)
-         VALUES ($1, $2, $3, $4)`,
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
         [email, utm_source || null, utm_medium || null, utm_campaign || null]
+      );
+
+      const unitRow = await pool.query(
+        `SELECT COUNT(*)::int AS unit FROM leads WHERE id <= $1`,
+        [inserted.rows[0].id]
       );
 
       await pool.end();
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, unit: unitRow.rows[0].unit }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     } catch (dbError) {
-      await pool.end();
-
       // Handle duplicate email (constraint violation)
       if (dbError.code === '23505') {
-        // Return 409 Conflict but treat as success (per spec)
-        return new Response(JSON.stringify({ success: true, duplicate: true }), {
+        // Return 409 Conflict but treat as success (per spec) — with their original place in line
+        let unit = null;
+        try {
+          const existing = await pool.query(
+            `SELECT (SELECT COUNT(*)::int FROM leads b WHERE b.id <= a.id) AS unit
+             FROM leads a WHERE a.email = $1`,
+            [email]
+          );
+          if (existing.rows[0]) unit = existing.rows[0].unit;
+        } catch (lookupError) {
+          // fall through with unit: null
+        }
+        await pool.end();
+
+        return new Response(JSON.stringify({ success: true, duplicate: true, unit }), {
           status: 409,
           headers: { 'Content-Type': 'application/json' },
         });
       }
 
+      await pool.end();
       throw dbError;
     }
   } catch (error) {

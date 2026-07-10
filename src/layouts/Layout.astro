@@ -26,6 +26,25 @@ const ogImage = new URL('/og.jpg', Astro.url);
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
+    <!-- Pre-paint: night mode (21:00–07:00 local, ?theme=day|night overrides) + first-visit boot stamp. -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        var h = new Date().getHours();
+        var night = h >= 21 || h < 7;
+        var forced = /[?&]theme=(day|night)\b/.exec(location.search);
+        if (forced) night = forced[1] === 'night';
+        if (night) {
+          d.classList.add('night');
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', '#0A0908');
+        }
+        try {
+          if (!localStorage.getItem('volt-boot')) d.setAttribute('data-boot', '');
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Fonts: real woff2, latin subsets, self-hosted -->
     <link rel="preload" as="font" href="/fonts/eb-garamond-400.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/ibm-plex-mono-400.woff2" type="font/woff2" crossorigin />
@@ -72,14 +91,36 @@ const ogImage = new URL('/og.jpg', Astro.url);
       }
 
       :root {
-        --black: #0C0E0B;
-        --black-lift: #141612;
-        --bone: #EDEAE0;
-        --bone-dim: rgba(237, 234, 224, 0.45);
-        --mint: #C7D4B8;
+        --bg: #0C0E0B;
+        --bg-lift: #141612;
+        --ink-rgb: 232, 228, 218;
+        --ink: #E8E4DA;
+        --ink-dim: rgba(var(--ink-rgb), 0.45);
+        --ink-ghost: rgba(var(--ink-rgb), 0.22);
+        --amber: #FFB000;
+        --amber-rgb: 255, 176, 0;
+
+        /* day macros keep the cool steel — the cold light IS the villain glow in 03 */
+        --img-filter: contrast(1.14) brightness(0.9);
 
         --font-serif: 'EB Garamond', Garamond, Georgia, serif;
         --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+      }
+
+      /* Night: darker and QUIETER than day — warm low-chroma bone, never mustard.
+         Amber survives only as the firmware accent, dimmed. */
+      html.night {
+        --bg: #0A0908;
+        --bg-lift: #0F0D0A;
+        --ink-rgb: 201, 185, 154;
+        --ink: #C9B99A;
+        --ink-dim: rgba(var(--ink-rgb), 0.4);
+        --ink-ghost: rgba(var(--ink-rgb), 0.18);
+        --amber: #B87E0A;
+        --amber-rgb: 184, 126, 10;
+
+        /* warm duotone pass + a further 20% dim so photos stop fighting the palette */
+        --img-filter: contrast(1.1) brightness(0.72) sepia(0.38) saturate(0.65);
       }
 
       * {
@@ -89,12 +130,12 @@ const ogImage = new URL('/og.jpg', Astro.url);
       }
 
       html {
-        background: var(--black);
+        background: var(--bg);
       }
 
       body {
-        background: var(--black);
-        color: var(--bone);
+        background: var(--bg);
+        color: var(--ink);
         font-family: var(--font-serif);
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
@@ -115,13 +156,13 @@ const ogImage = new URL('/og.jpg', Astro.url);
 
       input:focus-visible,
       button:focus-visible {
-        outline: 2px solid var(--mint);
+        outline: 2px solid var(--ink);
         outline-offset: 2px;
       }
 
       ::selection {
-        background: var(--mint);
-        color: var(--black);
+        background: var(--ink);
+        color: var(--bg);
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -138,8 +179,6 @@ const ogImage = new URL('/og.jpg', Astro.url);
   </head>
   <body>
     <slot />
-
-    <!-- Vercel Web Analytics -->
-    <script defer src="/_vercel/insights/script.js"></script>
+    <!-- No analytics, no cookies, no third-party scripts. The footer claims it; it has to be true. -->
   </body>
 </html>

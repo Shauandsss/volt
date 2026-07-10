@@ -1,18 +1,28 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// spec v3 §7: the Bench ships HIDDEN until the flat-lay asset exists.
+// Flip to true when /images/bench.jpg (per v2 §5) is delivered.
+const BENCH_READY = false;
 ---
 
 <Layout>
-  <style>
-    /* ===== Film grain: plain-opacity tile, no blend modes ===== */
+  {/* is:global — the page builds DOM at runtime (cards, ticks, receipt lines);
+      scoped styles would miss those elements */}
+  <style is:global>
+    /* ===== Film grain: pre-baked PNG tile ONLY (feTurbulence/blend modes crash GPUs) ===== */
     .grain {
       position: fixed;
       inset: 0;
       background: url('/grain-256.png') repeat;
       background-size: 256px 256px;
-      opacity: 0.08;
+      opacity: 0.035;
       pointer-events: none;
       z-index: 50;
+    }
+
+    .grain.hot {
+      opacity: 0.14;
     }
 
     main {
@@ -21,27 +31,33 @@ import Layout from '../layouts/Layout.astro';
     }
 
     section {
-      /* barely-visible vignette lifting each section's center out of the black */
-      background: radial-gradient(ellipse 110% 85% at 50% 50%, var(--black-lift) 0%, var(--black) 72%);
+      position: relative;
+      background: radial-gradient(ellipse 110% 85% at 50% 50%, var(--bg-lift) 0%, var(--bg) 72%);
     }
 
     h1,
     h2 {
       font-family: var(--font-serif);
       font-weight: 400;
-      color: var(--bone);
+      color: var(--ink);
     }
 
+    /* poster scale — two-axis clamp so composed headlines always fit the viewport
+       (7.8vw, not 8.5: the longest composed line must clear the right margin) */
     h1 {
-      font-size: clamp(2.6rem, 6vw, 5rem);
-      line-height: 1.05;
+      font-size: clamp(3rem, min(7.8vw, 15vh), 10rem);
+      line-height: 0.95;
       letter-spacing: -0.01em;
     }
 
     h2 {
-      font-size: clamp(2rem, 4.5vw, 3.2rem);
-      line-height: 1.05;
+      font-size: clamp(2.4rem, min(7vw, 13vh), 7rem);
+      line-height: 0.98;
       letter-spacing: -0.01em;
+    }
+
+    em {
+      font-style: italic; /* venom words only */
     }
 
     .mono {
@@ -49,105 +65,350 @@ import Layout from '../layouts/Layout.astro';
       letter-spacing: 0.04em;
     }
 
-    /* ===== Reveals: slow fades + small drifts, once ===== */
-    .reveal {
+    .fw {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+    }
+
+    .marker {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: var(--ink-ghost);
+      z-index: 2;
+    }
+
+    .caption {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--ink-ghost);
+      text-transform: lowercase;
+    }
+
+    /* ===== generic entrance: a single opacity step (not a fade) ===== */
+    .step {
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 800ms ease-out, transform 800ms ease-out;
-      transition-delay: var(--d, 0ms);
     }
 
-    .reveal.is-visible {
+    .step.on {
       opacity: 1;
-      transform: none;
     }
 
-    /* ===== Macro fragments: feathered into the dark, slow 8s breathe ===== */
-    .fragment {
-      overflow: hidden;
+    /* ===== 00 — Boot stamp ===== */
+    .boot {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
     }
 
-    /* quiet serif asides — same voice as the hero caption */
-    .aside {
-      font-style: italic;
-      font-size: 1.05rem;
-      color: var(--bone-dim);
-      line-height: 1.6;
+    html[data-boot] .boot {
+      display: flex;
     }
 
-    .fragment img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scale(1);
-      transition: transform 8000ms ease-out;
+    .boot .fw {
+      color: var(--ink-dim);
+      white-space: pre-wrap;
+      text-align: center;
     }
 
-    .fragment.is-visible img {
-      transform: scale(1.04);
+    /* ===== chaos overlays ===== */
+    .flashover {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .reveal {
-        opacity: 1;
-        transform: none;
-        transition: none;
-      }
-
-      .fragment img,
-      .fragment.is-visible img {
-        transform: none;
-        transition: none;
-      }
+    .blackout {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: none;
+      z-index: 70;
     }
 
-    /* ===== 1. Hero — pure text in darkness ===== */
-    .hero {
-      min-height: 100vh;
+    /* ===== personality stamps (§3): one voice at a time ===== */
+    .top-stamp {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -110%);
+      max-width: 92vw;
+      padding: 0.7rem 1.1rem;
+      background: var(--bg);
+      border-bottom: 1px solid rgba(var(--ink-rgb), 0.15);
+      color: var(--ink-dim);
+      text-align: center;
+      z-index: 80;
+      transition: transform 300ms cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    .top-stamp.show {
+      transform: translate(-50%, 0);
+    }
+
+    .ghost-line {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--ink-dim);
+      display: none;
+      z-index: 80;
+      text-align: center;
+    }
+
+    .ghost-line.show {
+      display: block;
+    }
+
+    /* page sleep — wake on move; the dot keeps beating */
+    .sleep {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 85;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2rem;
+      visibility: hidden;
+      transition: opacity 2000ms linear, visibility 0s 2000ms;
+    }
+
+    .sleep.asleep {
+      opacity: 0.92;
+      visibility: visible;
+      transition: opacity 2000ms linear;
+    }
+
+    .sleep.waking {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms linear, visibility 0s 300ms;
+    }
+
+    .sleep .fw {
+      color: var(--ink-dim);
+    }
+
+    /* held-interruptions counter (§3.6) — discreet, bottom-left */
+    .held {
+      position: fixed;
+      left: 1.2rem;
+      bottom: 1rem;
+      color: var(--ink-ghost);
+      z-index: 45;
+    }
+
+    /* crown navigation (§3.5) */
+    .crown {
+      position: fixed;
+      right: 10px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(var(--ink-rgb), 0.3);
+      z-index: 45;
+      cursor: grab;
+      touch-action: none;
+      transform: translateY(-50%);
+    }
+
+    .crown::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      background: repeating-conic-gradient(rgba(var(--ink-rgb), 0.28) 0 12deg, transparent 12deg 30deg);
+    }
+
+    .crown.grabbing {
+      cursor: grabbing;
+      border-color: rgba(var(--ink-rgb), 0.55);
+    }
+
+    .crown-label {
+      position: fixed;
+      right: 38px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink-dim);
+      white-space: nowrap;
+      display: none;
+      z-index: 45;
+    }
+
+    .crown-label.show {
+      display: block;
+    }
+
+    @media (pointer: coarse) {
+      .crown,
+      .crown-label {
+        display: none !important;
+      }
+    }
+
+    /* ===== night stamp ===== */
+    .night-stamp {
+      display: none;
+      position: absolute;
+      top: 0.9rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 92vw;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--amber);
+      z-index: 5;
       text-align: center;
+    }
+
+    html.night .night-stamp {
+      display: block;
+    }
+
+    /* ===== 01 — Hero (recomposed) ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 14vh 1.5rem 6rem;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      width: min(1280px, 100%);
+      margin: 0 auto;
       position: relative;
-      padding: 4rem 1.5rem 6rem;
     }
 
     .wordmark {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 500;
       letter-spacing: 0.35em;
-      text-indent: 0.35em;
+      color: var(--ink-dim);
+      z-index: 3;
     }
 
-    .rainbow {
-      width: 64px;
-      height: 4px;
-      margin: 8px auto 0;
-      opacity: 0.7;
-      background: linear-gradient(
-        to right,
-        #A6524B 0 16.667%,
-        #BE7245 16.667% 33.333%,
-        #C4A94F 33.333% 50%,
-        #74895F 50% 66.667%,
-        #5B7794 66.667% 83.333%,
-        #756084 83.333% 100%
-      );
+    /* verb: sweep — masked wipe, one composed line per beat. Breaks are content. */
+    .hl-line {
+      display: block;
+      white-space: nowrap;
     }
 
-    .hero h1 {
-      max-width: 17ch;
-      margin-top: 3.5rem;
+    .hl-inner {
+      display: inline-block;
+      clip-path: inset(0 100% 0 0);
     }
 
-    .hero-caption {
-      font-style: italic;
+    .hl-line.on .hl-inner {
+      clip-path: inset(0 -2% 0 0);
+      transition: clip-path 550ms cubic-bezier(0.6, 0, 0.2, 1);
+    }
+
+    /* the period blinks at 1Hz — the page opens and closes on the same heartbeat */
+    .hl-period {
+      animation: blink 1s linear infinite;
+    }
+
+    @keyframes blink {
+      0%, 55% { opacity: 1; }
+      56%, 100% { opacity: 0.12; }
+    }
+
+    .hero-sub {
+      font-style: normal; /* roman, not italic */
       font-size: clamp(1.1rem, 1.7vw, 1.35rem);
-      color: var(--bone-dim);
-      margin-top: 2.8rem;
+      color: var(--ink-dim);
+      margin-top: 2.6rem;
       max-width: 44ch;
+    }
+
+    /* the reel — anchored top-right third. phosphor green like the watch LCD. verb: ignite */
+    .reel {
+      position: absolute;
+      right: 8vw;
+      top: 14vh;
+      width: 140px;
+      height: 140px;
+      border-radius: 30px;
+      background: #0A100B;
+      border: 1px solid rgba(var(--ink-rgb), 0.25);
+      overflow: hidden;
+      filter: brightness(0);
+      z-index: 2;
+    }
+
+    .reel.lit {
+      filter: brightness(1);
+      transition: filter 120ms linear;
+    }
+
+    html.night .reel.lit {
+      filter: brightness(0.4);
+    }
+
+    .reel-strip {
+      font-family: var(--font-mono);
+      font-size: 1.9rem;
+      line-height: 46.667px; /* 140/3 — three glyphs visible */
+      text-align: center;
+      color: rgba(126, 226, 138, 0.9); /* phosphor green — the watch LCD, not the page palette */
+      animation: reel-spin 2.8s linear infinite;
+    }
+
+    .reel.paused .reel-strip {
+      animation-play-state: paused;
+    }
+
+    /* 1-bit: hard glyphs behind a dithered scanline screen */
+    .reel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
+      pointer-events: none;
+    }
+
+    @keyframes reel-spin {
+      from { transform: translateY(0); }
+      to { transform: translateY(-50%); }
+    }
+
+    @media (max-width: 900px) {
+      .reel {
+        position: static;
+        margin-top: 3rem;
+      }
+
+      .hl-line {
+        white-space: normal;
+      }
     }
 
     .scroll-cue {
@@ -157,22 +418,204 @@ import Layout from '../layouts/Layout.astro';
       transform: translateX(-50%);
       font-family: var(--font-mono);
       font-size: 0.8rem;
-      animation: cue-pulse 2.4s ease-out infinite;
+      color: var(--ink-ghost);
     }
 
-    @keyframes cue-pulse {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.8; }
+    /* ===== 02 — The Tally: the machine you crank ===== */
+    .tally {
+      height: 260vh; /* 100vh pin + ~160vh of scrub — the scroll IS the time of day */
     }
 
-    /* ===== 2. The cost — the waking LCD ===== */
-    .cost {
-      min-height: 100vh;
-      position: relative;
+    .tally-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 14vh 1.5rem 4rem;
       overflow: hidden;
+    }
+
+    .tally-clock {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      font-size: 0.8rem;
+      color: var(--ink-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tally-pre,
+    .tally-post {
+      font-size: 1.3rem;
+      color: var(--ink-dim);
+    }
+
+    /* odometer drums — serif digits on rolling cylinders, like a watch date window */
+    .drums {
+      display: flex;
+      gap: 10px;
+      margin: 2.2rem 0;
+      font-family: var(--font-serif);
+      font-size: clamp(4rem, min(9vw, 13vh), 8rem);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .drums.clunk {
+      animation: clunk 100ms linear;
+    }
+
+    @keyframes clunk {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+      100% { transform: translateY(0); }
+    }
+
+    .drum {
+      height: 3em;
+      width: 0.72em;
+      overflow: hidden;
+      border: 1px solid rgba(var(--ink-rgb), 0.18); /* hairline frame */
+      position: relative;
+    }
+
+    .drum-col {
+      line-height: 1;
+      will-change: transform;
+    }
+
+    .drum-col div {
+      height: 1em;
       display: flex;
       align-items: center;
-      padding: 7rem 1.5rem;
+      justify-content: center;
+    }
+
+    /* cylinder shading — neighbors above/below read at ~15% */
+    .drum::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        var(--bg) 0%,
+        rgba(12, 14, 11, 0.85) 18%,
+        transparent 40%,
+        transparent 60%,
+        rgba(12, 14, 11, 0.85) 82%,
+        var(--bg) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* the day strip: 96 ticks, 07:00 → 23:00 */
+    .daystrip {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: min(760px, 88vw);
+      margin-top: 2.4rem;
+    }
+
+    .strip-label {
+      font-size: 0.65rem;
+      color: var(--ink-ghost);
+    }
+
+    .ticks {
+      position: relative;
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 26px;
+    }
+
+    .tick {
+      width: 2px;
+      height: 13px;
+      background: rgba(var(--ink-rgb), 0.14);
+    }
+
+    .tick.lit {
+      background: rgba(var(--ink-rgb), 0.55);
+    }
+
+    .tick.flick {
+      background: rgba(var(--ink-rgb), 0.95);
+    }
+
+    /* the lock: strip extinguishes except the three that mattered (receipt family — amber) */
+    .ticks.out .tick.lit {
+      background: rgba(var(--ink-rgb), 0.18);
+    }
+
+    .ticks.out .tick.matters {
+      background: #B87E0A;
+      height: 22px;
+    }
+
+    .tick-label {
+      position: absolute;
+      top: 30px;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      color: #B87E0A;
+      white-space: nowrap;
+      opacity: 0;
+    }
+
+    .ticks.out ~ * .tick-label,
+    .ticks.out .tick-label {
+      opacity: 1;
+    }
+
+    .daystrip-wrap {
+      position: relative;
+      padding-bottom: 2.4rem;
+    }
+
+    .tally-fw {
+      color: var(--ink-dim);
+      margin-top: 2.6rem;
+      min-height: 1.4em;
+    }
+
+    .tally-q {
+      font-style: italic;
+      font-size: 1.3rem;
+      color: var(--ink-dim);
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .tick-label {
+        font-size: 0.52rem;
+      }
+
+      .tick-label.tl-mid {
+        top: 44px;
+      }
+    }
+
+    /* ===== 03 — The Cost (sticky scroll beats) ===== */
+    .cost {
+      height: 320vh;
+    }
+
+    .cost-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 14vh 1.5rem 4rem;
     }
 
     .cost-photo {
@@ -184,17 +627,18 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .cost-photo img {
-      /* feathered to black on all sides; center on the LCD glow */
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: var(--img-filter);
       -webkit-mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, #000 32%, transparent 74%);
       mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, #000 32%, transparent 74%);
     }
 
-    .cost-tint {
-      /* the screen's glow spilling faintly onto the text side */
+    .cost-caption {
       position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 45% 40% at 62% 50%, rgba(199, 212, 184, 0.05), transparent 70%);
-      pointer-events: none;
+      bottom: 2rem;
+      right: 2rem;
     }
 
     .cost-inner {
@@ -205,56 +649,33 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .cost-lines {
-      max-width: 52%;
+      max-width: 60%;
     }
 
+    /* verb: replace — a stack of regrets. Each regret is composed lines, no widows. */
     .cost-line {
-      color: var(--bone);
-      font-size: clamp(1.6rem, 3vw, 2.6rem);
-      line-height: 1.25;
+      font-family: var(--font-serif);
+      color: var(--ink);
+      font-size: clamp(1.7rem, min(6vw, 6.2vh), 4rem);
+      line-height: 1.05;
       letter-spacing: -0.01em;
-      margin-bottom: 2.2rem;
+      margin-bottom: 1.4rem;
       opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 800ms ease-out, transform 800ms ease-out;
     }
 
     .cost-line.on {
       opacity: 1;
-      transform: none;
     }
 
     .cost-line.on.dim {
-      opacity: 0.35;
+      opacity: 1;
+      color: var(--ink-ghost);
+      transition: color 500ms ease-out;
     }
 
-    .cost-count {
-      font-family: var(--font-mono);
-      font-size: clamp(0.95rem, 1.6vw, 1.1rem);
-      letter-spacing: 0.04em;
-      color: var(--bone);
-      opacity: 0.85;
-      margin-top: 3.5rem;
-      max-width: 52%;
-      line-height: 1.9;
-    }
-
-    .cost-count .num {
-      color: var(--mint);
-      font-size: 1.35em;
-      font-weight: 500;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .cost-line {
-        transition: none;
-        opacity: 1;
-        transform: none;
-      }
-
-      .cost-line.dim {
-        opacity: 0.35;
-      }
+    /* the only glowing text on the page */
+    .glow-time {
+      text-shadow: 0 0 22px rgba(var(--ink-rgb), 0.55);
     }
 
     @media (max-width: 768px) {
@@ -263,93 +684,219 @@ import Layout from '../layouts/Layout.astro';
         width: 100%;
       }
 
-      /* keep the label legible: dim the photo itself, not its caption */
       .cost-photo img {
         opacity: 0.22;
       }
 
-      .cost-tint {
-        display: none;
-      }
-
-      .cost-lines,
-      .cost-count {
+      .cost-lines {
         max-width: 100%;
       }
-
-      /* readability over the glow */
-      .cost-line {
-        text-shadow: 0 2px 24px rgba(12, 14, 11, 0.95), 0 0 8px rgba(12, 14, 11, 0.85);
-      }
-
-      .cost-line.on.dim {
-        opacity: 0.55;
-      }
-
-      .cost-count {
-        text-shadow: 0 2px 24px rgba(12, 14, 11, 0.95), 0 0 8px rgba(12, 14, 11, 0.85);
-      }
-
     }
 
-    /* ===== 3. The refusal — the knurled button ===== */
-    .refusal {
-      position: relative;
+    /* ===== 04 — The Noise ===== */
+    .noise {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden; /* cards are absolutely contained — zero bleed into 03/05 */
+      padding: 14vh 1.5rem 6rem;
+    }
+
+    .noise-cards {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
       overflow: hidden;
-      padding: 7rem 1.5rem;
+    }
+
+    .noise-cards .noise-card {
+      position: absolute;
+    }
+
+    /* real card anatomy — the ONLY place a third (UI sans) font appears:
+       it plays "everyone else's design" */
+    .noise-card {
+      width: min(300px, 74vw);
+      background: #15140F;
+      border: 1px solid rgba(var(--ink-rgb), 0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+      font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: rgba(var(--ink-rgb), 0.9);
+    }
+
+    .nc-icon {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      font-size: 13px;
+      line-height: 16px;
+      text-align: center;
+      opacity: 0.8;
+    }
+
+    .nc-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .nc-body {
+      font-size: 0.74rem;
+      line-height: 1.35;
+      opacity: 0.65;
+    }
+
+    .noise.calm .noise-card {
+      opacity: 0.3;
+    }
+
+    html.night .noise-cards .noise-card {
+      opacity: 0.25;
+    }
+
+    .noise-after {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .ornot {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: clamp(3rem, min(8.5vw, 15vh), 10rem);
+      line-height: 0.95;
+      color: var(--ink);
+    }
+
+    .noise-fw {
+      color: var(--ink-dim);
+      margin-top: 2.4rem;
+    }
+
+    .noise-stamp {
+      position: relative;
+      z-index: 2;
+      display: none;
+      color: var(--amber);
+      font-size: 0.85rem;
+    }
+
+    html.night .noise-stamp {
+      display: block;
+    }
+
+    html.night .noise-after {
+      display: none;
+    }
+
+    /* ===== 05 — The Refusal ===== */
+    .refusal {
+      overflow: hidden;
+      padding: 14vh 1.5rem 8rem;
     }
 
     .refusal-inner {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 5fr 7fr;
+      grid-template-columns: 6fr 6fr;
       gap: 4rem;
-      align-items: center;
+      align-items: start; /* headline in the upper third, not at the fold */
     }
 
     .refusal-photo {
       align-self: start;
-      /* let the mesh-strap corner run toward the section's top edge */
-      margin-top: -7rem;
       width: 118%;
-      margin-left: -9%;
+      margin-left: -12%;
       aspect-ratio: 875 / 1216;
-      max-height: 130vh;
+      max-height: 120vh;
+      overflow: hidden;
+      position: relative;
     }
 
     .refusal-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: var(--img-filter);
       -webkit-mask-image: radial-gradient(ellipse 60% 52% at 52% 48%, #000 34%, transparent 76%);
       mask-image: radial-gradient(ellipse 60% 52% at 52% 48%, #000 34%, transparent 76%);
     }
 
-    .refusals {
-      list-style: none;
-      margin-top: 2.8rem;
-      font-family: var(--font-serif);
+    /* §3.2 cursor pool of light — active in 05 and 07 only, rationed */
+    .pool-veil {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 7, 4, 0.7);
+      pointer-events: none;
+      z-index: 2;
+      -webkit-mask-image: radial-gradient(circle 180px at var(--mx, 50%) var(--my, 50%), transparent 0 45%, #000 78%);
+      mask-image: radial-gradient(circle 180px at var(--mx, 50%) var(--my, 50%), transparent 0 45%, #000 78%);
+    }
+
+    .refusal-caption {
+      margin-top: 0.4rem;
+      margin-left: 6%;
+    }
+
+    .refusal h2 {
+      max-width: 16ch;
+    }
+
+    .refusal-aside {
       font-style: italic;
       font-size: 1.05rem;
-      line-height: 2;
-      max-width: 38ch;
-      color: var(--bone);
+      color: var(--ink-dim);
+      margin-top: 1.6rem;
     }
 
-    .refusals li {
-      padding: 1.6rem 0;
-      border-bottom: 1px solid rgba(237, 234, 224, 0.12);
+    /* verb: stamp — a mono ledger, mechanical snaps */
+    .ledger {
+      list-style: none;
+      margin-top: 2.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+      max-width: 46ch;
+      color: var(--ink);
     }
 
-    .refusals li:first-child {
-      border-top: 1px solid rgba(237, 234, 224, 0.12);
+    .ledger li {
+      padding: 1.3rem 0;
+      border-bottom: 1px solid rgba(var(--ink-rgb), 0.12);
+      opacity: 0;
+      transform-origin: left center;
     }
 
-    .refusals strong {
-      font-weight: 500;
-      font-style: normal;
+    .ledger li:first-child {
+      border-top: 1px solid rgba(var(--ink-rgb), 0.12);
+    }
+
+    .ledger li.on {
+      animation: stamp 180ms cubic-bezier(0.2, 0, 0.2, 1) forwards;
+    }
+
+    .ledger .x {
+      display: inline-block;
+      width: 1.6em;
+      color: var(--ink-dim);
+    }
+
+    @keyframes stamp {
+      0% { opacity: 0; transform: scale(1.25); }
+      55% { opacity: 1; transform: scale(0.97); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     .matter {
-      border-left: 2px solid var(--mint);
+      border-left: 2px solid rgba(var(--ink-rgb), 0.35);
       padding-left: 1.4rem;
       margin-top: 2.8rem;
       font-size: 1.15rem;
@@ -358,39 +905,44 @@ import Layout from '../layouts/Layout.astro';
     }
 
     @media (max-width: 768px) {
-      .refusal {
-        padding-top: 0;
-      }
-
       .refusal-inner {
         grid-template-columns: 1fr;
         gap: 2.5rem;
       }
 
       .refusal-photo {
-        margin-top: 0;
+        margin-left: 0;
+        width: 100%;
         aspect-ratio: auto;
         height: 55vh;
         max-height: none;
       }
+
+      .refusal-caption {
+        margin: 0.6rem 0 0;
+      }
     }
 
-    /* ===== 4. The conviction — no image, deliberately ===== */
+    /* ===== 06 — The Conviction (the rest beat — image-free) ===== */
     .conviction {
-      padding: 10rem 1.5rem;
+      min-height: 140vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 14vh 1.5rem 12rem;
     }
 
     .conviction-inner {
-      max-width: 580px;
+      max-width: 1100px;
+      width: 100%;
       margin: 0 auto;
-      text-align: center;
     }
 
     .conviction-copy {
       font-size: 1.05rem;
       line-height: 1.75;
-      color: var(--bone);
-      margin: 2rem auto 3.5rem;
+      color: var(--ink);
+      margin: 4.5rem 0 8rem auto;
       max-width: 46ch;
     }
 
@@ -399,27 +951,226 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .creed {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
-      color: var(--bone-dim);
+      color: var(--ink-dim);
       padding: 1.2rem 0;
-      border-top: 1px solid rgba(237, 234, 224, 0.2);
+      max-width: 34ch;
     }
 
-    .creed:last-child {
-      border-bottom: 1px solid rgba(237, 234, 224, 0.2);
+    /* asymmetric distribution: left / center-right / left */
+    .creed:nth-child(1) { margin-right: auto; }
+    .creed:nth-child(2) { margin-left: 58%; }
+    .creed:nth-child(3) { margin-right: auto; margin-top: 2rem; }
+
+    @media (max-width: 768px) {
+      .creed:nth-child(2) { margin-left: 20%; }
     }
 
-    /* ===== 5. The line in the sand — lead capture ===== */
-    .capture {
-      position: relative;
+    /* ===== 07 — The Bench (ships hidden until the flat-lay exists) ===== */
+    .bench {
+      padding: 14vh 0 6rem;
       overflow: hidden;
-      padding: 8rem 1.5rem;
     }
 
-    .capture-inner {
-      max-width: 1200px;
+    .bench h2 {
+      max-width: 1240px;
+      margin: 0 auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    .bench-stage {
+      position: relative;
+      width: 115%;
+      height: min(72vh, 640px);
+      will-change: transform;
+    }
+
+    .bench-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: var(--img-filter);
+    }
+
+    .chalk {
+      position: absolute;
+      left: 56%;
+      top: 24%;
+      width: clamp(150px, 16vw, 220px);
+      aspect-ratio: 875 / 1100;
+      border: 1.5px dashed rgba(var(--ink-rgb), 0.3);
+      border-radius: 22% / 18%;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    /* hold-to-see: a thin ring engraves in 12 ratchet steps */
+    .chalk::after {
+      content: '';
+      position: absolute;
+      inset: -9px;
+      border-radius: inherit;
+      padding: 2px;
+      background: conic-gradient(rgba(var(--ink-rgb), 0.7) calc(var(--hold, 0) * 30deg), transparent 0);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .chalk .caption {
+      position: absolute;
+      bottom: -1.8rem;
+      left: 0;
+      white-space: nowrap;
+    }
+
+    .glimpse {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      display: none;
+    }
+
+    .glimpse.show {
+      display: block;
+    }
+
+    .glimpse img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* a fragment, never the watch — and 30% dimmer at night */
+      filter: var(--img-filter) brightness(1);
+    }
+
+    html.night .glimpse img {
+      filter: var(--img-filter) brightness(0.7);
+    }
+
+    .bench-label {
+      position: absolute;
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .bench-label::before {
+      content: '·';
+      margin-right: 0.6em;
+      color: var(--ink-dim);
+    }
+
+    .bl-1 { left: 12%; top: 30%; }
+    .bl-2 { left: 26%; top: 62%; }
+    .bl-3 { left: 44%; top: 80%; }
+
+    /* ===== 08 — The Receipt (physicality pass) ===== */
+    .receipt-sec {
+      padding: 14vh 1.5rem 10rem;
+    }
+
+    .receipt-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 5rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .receipt {
+      width: min(420px, 92vw);
+      min-height: 55vh;
+      padding: 3rem 2rem;
+      background: #0A0B08;
+      color: var(--amber);
+      position: relative;
+      transform: rotate(0.6deg); /* the only non-flat object */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* paper texture — plain-opacity tile, no blend modes */
+    .paper-tex {
+      position: absolute;
+      inset: 0;
+      background: url('/grain-256.png') repeat;
+      background-size: 256px 256px;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+
+    /* real perforated edges: triangle teeth */
+    .receipt::before,
+    .receipt::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background:
+        linear-gradient(-45deg, #0A0B08 7px, transparent 0),
+        linear-gradient(45deg, #0A0B08 7px, transparent 0);
+      background-position: left top;
+      background-repeat: repeat-x;
+      background-size: 14px 14px;
+    }
+
+    .receipt::before {
+      top: -10px;
+      transform: scaleY(-1);
+    }
+
+    .receipt::after {
+      bottom: -10px;
+    }
+
+    /* verb: print — on scrub, with feed jitter */
+    .rl {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      letter-spacing: 0.03em;
+      line-height: 2.1;
+      white-space: pre;
+      opacity: 0;
+    }
+
+    .rl.on {
+      opacity: 1;
+    }
+
+    /* thermal fade on the two oldest lines */
+    .receipt .rl:nth-child(2).on { opacity: 0.55; }
+    .receipt .rl:nth-child(3).on { opacity: 0.55; }
+
+    .receipt-aside {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-style: italic;
+      color: var(--ink-dim);
+      max-width: 20ch;
+    }
+
+    @media (max-width: 900px) {
+      .receipt-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        justify-items: start;
+      }
+    }
+
+    /* ===== 09 — The List (the ritual) + session receipt ===== */
+    .list-sec {
+      overflow: hidden;
+      padding: 14vh 1.5rem 9rem;
+    }
+
+    .list-inner {
+      max-width: 1240px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 6fr 5fr;
@@ -427,65 +1178,96 @@ import Layout from '../layouts/Layout.astro';
       align-items: center;
     }
 
-    .capture-copy {
-      max-width: 520px;
+    .list-copy {
+      max-width: 560px;
     }
 
-    /* the product turning its face away, screen sliver at form height */
-    .capture-photo {
-      aspect-ratio: 875 / 1216;
-      max-height: 110vh;
-    }
-
-    .capture-photo img {
-      -webkit-mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
-      mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
-    }
-
-    .capture-sub {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
-      color: var(--bone-dim);
-      margin-top: 1.6rem;
-      line-height: 1.8;
+    .list-sub {
+      color: var(--ink-dim);
+      margin-top: 1.8rem;
+      line-height: 1.9;
     }
 
     .coupon {
-      margin-top: 2.6rem;
+      margin-top: 2.8rem;
     }
 
-    .coupon input[type='email'] {
+    /* the email line is a receipt line — bone ink. amber is spent. */
+    .tape {
+      position: relative;
+      background: #0A0B08;
+      padding: 1.1rem 1.2rem 1.2rem;
+    }
+
+    .tape::before,
+    .tape::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background:
+        linear-gradient(-45deg, #0A0B08 4px, transparent 0),
+        linear-gradient(45deg, #0A0B08 4px, transparent 0);
+      background-position: left top;
+      background-repeat: repeat-x;
+      background-size: 8px 8px;
+    }
+
+    .tape::before { top: -6px; transform: scaleY(-1); }
+    .tape::after { bottom: -6px; }
+
+    .tape input[type='email'] {
       width: 100%;
-      padding: 14px;
+      padding: 6px 0;
       background: transparent;
-      border: 1px solid rgba(237, 234, 224, 0.4);
+      border: none;
+      border-bottom: 1px dashed rgba(var(--ink-rgb), 0.35);
       font-family: var(--font-mono);
       font-size: 0.9rem;
-      letter-spacing: 0.02em;
-      color: var(--bone);
+      letter-spacing: 0.05em;
+      color: var(--ink);
     }
 
-    .coupon input[type='email']::placeholder {
-      color: rgba(237, 234, 224, 0.3);
+    .tape input[type='email']:focus-visible {
+      outline: none;
+      border-bottom-color: var(--ink);
     }
 
-    .coupon button {
+    .tape input[type='email']::placeholder {
+      color: rgba(var(--ink-rgb), 0.3);
+    }
+
+    /* verb: tear */
+    .tape.torn {
+      clip-path: polygon(0 0, 100% 0, 97% 14%, 100% 26%, 96% 41%, 100% 55%, 97% 70%, 100% 84%, 98% 100%, 0 100%);
+      transform: translateX(56px) rotate(1.6deg);
+      opacity: 0;
+      transition: transform 480ms cubic-bezier(0.4, 0, 0.9, 0.4), opacity 90ms linear 400ms;
+    }
+
+    /* one honest button: solid machined block. bone fill, hard corners. */
+    .cut-btn {
       width: 100%;
-      margin-top: 12px;
-      padding: 14px;
-      background: var(--bone);
-      border: 1px solid var(--bone);
-      color: var(--black);
+      margin-top: 14px;
+      padding: 16px;
+      background: var(--ink);
+      border: none;
+      border-radius: 0;
+      color: var(--bg);
       font-family: var(--font-mono);
       font-size: 0.85rem;
       font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      letter-spacing: 0.16em;
       cursor: pointer;
+      transition: none; /* zero easing — a real button */
     }
 
-    .coupon button:disabled {
+    .cut-btn:active {
+      transform: translateY(2px);
+    }
+
+    .cut-btn:disabled {
       opacity: 0.6;
       cursor: wait;
     }
@@ -503,7 +1285,7 @@ import Layout from '../layouts/Layout.astro';
       font-family: var(--font-mono);
       font-size: 0.8rem;
       letter-spacing: 0.02em;
-      color: #C08A7E;
+      color: var(--ink-dim);
       margin-top: 10px;
     }
 
@@ -511,34 +1293,91 @@ import Layout from '../layouts/Layout.astro';
       display: block;
     }
 
-    .form-success {
+    .confirm {
       display: none;
-      border: 1px solid rgba(237, 234, 224, 0.4);
-      padding: 1.6rem 1.4rem;
       margin-top: 2.6rem;
-      font-size: 1.05rem;
-      line-height: 1.6;
     }
 
-    .form-success.show {
+    .confirm.show {
       display: block;
+    }
+
+    .confirm .rl {
+      color: var(--ink);
+      font-size: 0.85rem;
+      white-space: normal;
+      opacity: 1;
+    }
+
+    /* your session receipt */
+    .session {
+      margin-top: 2.4rem;
+    }
+
+    .s-receipt {
+      position: relative;
+      display: inline-block;
+      background: #0A0B08;
+      color: var(--ink);
+      padding: 1.4rem 1.6rem;
+      transform: rotate(-0.4deg);
+    }
+
+    .s-receipt .rl {
+      font-size: 0.8rem;
+      line-height: 1.9;
+    }
+
+    .keep-btn {
+      display: block;
+      margin-top: 14px;
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid rgba(var(--ink-rgb), 0.35);
+      color: var(--ink-dim);
+      cursor: pointer;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
     }
 
     .fine-print {
       font-family: var(--font-mono);
       font-size: 0.75rem;
       letter-spacing: 0.04em;
-      color: var(--bone-dim);
+      color: var(--ink-dim);
       margin-top: 1.6rem;
     }
 
+    .list-photo {
+      aspect-ratio: 875 / 1216;
+      max-height: 110vh;
+      overflow: hidden;
+    }
+
+    .list-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: var(--img-filter);
+      -webkit-mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
+      mask-image: radial-gradient(ellipse 55% 58% at 42% 50%, #000 34%, transparent 76%);
+    }
+
+    .list-caption {
+      margin-top: -2.5rem;
+      text-align: right;
+      padding-right: 12%;
+      position: relative;
+      z-index: 2;
+    }
+
     @media (max-width: 768px) {
-      .capture-inner {
+      .list-inner {
         grid-template-columns: 1fr;
         gap: 2.5rem;
       }
 
-      .capture-photo {
+      .list-photo {
         order: -1;
         aspect-ratio: auto;
         height: 50vh;
@@ -546,93 +1385,289 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
-    /* ===== Footer ===== */
-    footer {
-      padding: 3rem 1.5rem;
+    /* ===== 10 — The Batch ===== */
+    .batch {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.6rem;
+      padding: 14vh 1.5rem 6rem;
+    }
+
+    .batch-line {
+      color: var(--ink-dim);
       text-align: center;
+      max-width: 46ch;
+      min-height: 1.4em;
+    }
+
+    .batch-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: min(340px, 88vw);
+    }
+
+    .batch-stack .noise-card {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    .batch-stack.delivered .noise-card {
+      opacity: 1;
+      transform: none;
+      transition: opacity 150ms steps(2), transform 150ms ease-out;
+    }
+
+    /* one beat later they desaturate and crumble to grain */
+    .batch-stack.crumble .noise-card {
+      opacity: 0.04;
+      filter: grayscale(1) brightness(0.55) contrast(0.8);
+      transition: filter 400ms linear, opacity 1000ms steps(6) 350ms;
+    }
+
+    /* ===== The Pulse ===== */
+    footer {
+      position: relative;
+      padding: 6rem 2rem 3rem;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.4rem;
+    }
+
+    .pulse-dot {
+      width: 2px;
+      height: 2px;
+      background: var(--ink);
+      border-radius: 50%;
+      opacity: 0.2;
+      animation: pulse 1s linear infinite;
+    }
+
+    /* 180ms attack, decay to rest — the page keeps time */
+    @keyframes pulse {
+      0% { opacity: 0.2; }
+      18% { opacity: 0.45; }
+      100% { opacity: 0.2; }
+    }
+
+    .footer-mark {
       font-family: var(--font-mono);
       font-size: 0.7rem;
       letter-spacing: 0.12em;
-      opacity: 0.4;
+      color: var(--ink-dim);
+    }
+
+    .claims {
+      align-self: flex-end;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      color: var(--ink-ghost);
+      line-height: 2;
+    }
+
+    /* ===== reduced motion: scrubs render end-state; steady dot; no sleep dim ===== */
+    @media (prefers-reduced-motion: reduce) {
+      .hl-inner,
+      .hl-line.on .hl-inner {
+        clip-path: none;
+        transition: none;
+      }
+
+      .hl-period {
+        animation: none;
+      }
+
+      .reel {
+        filter: brightness(1);
+      }
+
+      .reel-strip {
+        animation: none;
+      }
+
+      .ledger li.on {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+
+      .tape.torn {
+        transition: none;
+      }
+
+      .pulse-dot {
+        animation: none;
+        opacity: 0.35;
+      }
+
+      .drums.clunk {
+        animation: none;
+      }
+
+      .top-stamp {
+        transition: none;
+      }
+
+      .sleep,
+      .sleep.asleep {
+        display: none;
+      }
     }
   </style>
 
-  <div class="grain" aria-hidden="true"></div>
+  <div class="grain" id="grain" aria-hidden="true"></div>
+
+  <div class="flashover" id="flashover" aria-hidden="true"></div>
+  <div class="blackout" id="blackout" aria-hidden="true"></div>
+
+  <!-- 00 — Boot stamp: once per visitor, ≤0.8s, cuts (no fade) -->
+  <div class="boot" id="boot" aria-hidden="true">
+    <p class="fw" id="bootLine"></p>
+  </div>
+
+  <!-- §3 personality voices — only one speaks at a time -->
+  <p class="top-stamp fw" id="topStamp" role="status"></p>
+  <p class="ghost-line fw" id="ghostLine">no rush. nothing here refreshes.</p>
+  <div class="sleep" id="sleep" aria-hidden="true">
+    <span class="pulse-dot"></span>
+    <p class="fw">resting. move to wake.</p>
+  </div>
+  <p class="held fw" id="held" hidden>held: 0</p>
+  <div class="crown" id="crown" aria-hidden="true"></div>
+  <p class="crown-label fw" id="crownLabel"></p>
 
   <main>
-    <!-- 1. Hero — the accusation. The darkness is the hero. -->
+    <!-- 01 — Hero (recomposed: three lines, breaks are content) -->
     <section class="hero">
-      <header class="reveal">
-        <p class="wordmark">VOLT</p>
-        <div class="rainbow" aria-hidden="true"></div>
-      </header>
+      <p class="wordmark">VOLT</p>
+      <p class="night-stamp mono" id="nightStamp"></p>
 
-      <h1 class="reveal" style="--d: 150ms">
-        They put a slot machine on your wrist. You called it an upgrade.
-      </h1>
+      <div class="hero-inner">
+        <h1 id="headline">
+          <span class="hl-line"><span class="hl-inner">They put a <em>slot machine</em></span></span>
+          <span class="hl-line"><span class="hl-inner">on your wrist.</span></span>
+          <span class="hl-line"><span class="hl-inner">You called it an <em>upgrade</em><span class="hl-period">.</span></span></span>
+        </h1>
 
-      <p class="hero-caption reveal" style="--d: 300ms">
-        Every buzz is a bet placed on your attention. The house always wins.
-      </p>
+        <p class="hero-sub step" id="heroSub">
+          Every buzz is a bet placed on your attention. The house always wins.
+        </p>
+
+        <div class="reel paused" id="reel" aria-hidden="true">
+          <div class="reel-strip">♥<br />✉<br />25%<br />⚡<br />@<br />3<br />▲<br />✆<br />♥<br />✉<br />25%<br />⚡<br />@<br />3<br />▲<br />✆</div>
+        </div>
+      </div>
 
       <div class="scroll-cue" aria-hidden="true">▼</div>
     </section>
 
-    <!-- 2. The cost — the waking LCD as temptation -->
-    <section class="cost">
-      <div class="cost-photo fragment reveal">
-        <img src="/images/teaser-screen.jpg" alt="" aria-hidden="true" loading="lazy" />
-      </div>
-      <div class="cost-tint" aria-hidden="true"></div>
+    <!-- 02 — The Tally: the machine you crank. Scroll IS the time of day. -->
+    <section class="tally" id="tally">
+      <div class="tally-sticky">
+        <span class="marker">02 — THE TALLY</span>
+        <span class="tally-clock mono" id="tallyClock">07:00</span>
 
-      <div class="cost-inner">
-        <div class="cost-lines" id="costLines">
-          <p class="cost-line">The report you never finished.</p>
-          <p class="cost-line">The dinner you only half attended.</p>
-          <p class="cost-line">The run cut short at mile two.</p>
-          <p class="cost-line">The sleep you traded for a glow at 11:47 PM.</p>
+        <p class="tally-pre">You checked your wrist</p>
+
+        <div class="drums" id="drums" role="img" aria-label="a counter rolling up to 96">
+          <div class="drum"><div class="drum-col" id="drumTens"></div></div>
+          <div class="drum"><div class="drum-col" id="drumOnes"></div></div>
         </div>
 
-        <p class="cost-count" id="costCount">
-          You checked your wrist <span class="num" id="counter">0</span> times today. How many were worth it?
-        </p>
+        <p class="tally-post">times.</p>
+
+        <div class="daystrip-wrap">
+          <div class="daystrip">
+            <span class="strip-label mono">07:00</span>
+            <div class="ticks" id="ticks"></div>
+            <span class="strip-label mono">23:00</span>
+          </div>
+        </div>
+
+        <p class="tally-fw fw" id="tallyFw" aria-live="polite"></p>
+        <p class="tally-q step" id="tallyQ">How many were worth it?</p>
       </div>
     </section>
 
-    <!-- 3. The refusal — one physical control beside a list of refusals -->
-    <section class="refusal">
+    <!-- 03 — The Cost: a stack of regrets, one per scroll beat -->
+    <section class="cost" id="cost">
+      <div class="cost-sticky">
+        <span class="marker">03 — THE COST</span>
+
+        <div class="cost-photo">
+          <img src="/images/teaser-screen.jpg" alt="" aria-hidden="true" loading="lazy" />
+          <p class="caption cost-caption">the glow, kept on a leash.</p>
+        </div>
+
+        <div class="cost-inner">
+          <div class="cost-lines" id="costLines">
+            <p class="cost-line">The report<br />you never finished.</p>
+            <p class="cost-line">The dinner<br />you only half attended.</p>
+            <p class="cost-line">The run cut short<br />at mile two.</p>
+            <p class="cost-line">The sleep you traded<br />for a glow at <span class="glow-time">11:47&nbsp;PM</span>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 — The Noise: the page's single interruption -->
+    <section class="noise" id="noise">
+      <span class="marker">04 — THE NOISE</span>
+      <div class="noise-cards" id="noiseCards" aria-hidden="true"></div>
+
+      <div class="noise-after" id="noiseAfter">
+        <p class="ornot step" id="ornot">Or not.</p>
+        <p class="noise-fw fw step" id="noiseFw">this page will not do that again. neither does volt.</p>
+      </div>
+
+      <p class="noise-stamp fw">not tonight.</p>
+    </section>
+
+    <!-- 05 — The Refusal -->
+    <section class="refusal" id="refusal">
+      <span class="marker">05 — THE REFUSAL</span>
       <div class="refusal-inner">
-        <div class="refusal-photo fragment reveal">
-          <img src="/images/teaser-button.jpg" alt="" aria-hidden="true" loading="lazy" />
+        <div>
+          <div class="refusal-photo pool" id="refusalPool">
+            <img src="/images/teaser-button.jpg" alt="" aria-hidden="true" loading="lazy" />
+            <div class="pool-veil" aria-hidden="true"></div>
+          </div>
+          <p class="caption refusal-caption">one honest button. machined, not rendered.</p>
         </div>
 
         <div>
-          <h2 class="reveal">Something is coming that refuses to behave.</h2>
+          <h2 class="step">Something is coming<br />that <em>refuses</em> to behave.</h2>
 
-          <p class="aside reveal" style="--d: 100ms; margin-top: 1.4rem">
-            One honest button. Machined, not rendered.
-          </p>
+          <p class="refusal-aside step">One honest button. Machined, not rendered.</p>
 
-          <ul class="refusals">
-            <li class="reveal" style="--d: 150ms"><strong>Never</strong> interrupt your work block for a flash sale.</li>
-            <li class="reveal" style="--d: 250ms"><strong>Never</strong> buzz through dinner for an email that could wait.</li>
-            <li class="reveal" style="--d: 350ms"><strong>Never</strong> turn your run into a public scoreboard.</li>
-            <li class="reveal" style="--d: 450ms"><strong>Never</strong> glow in your bedroom after 9 PM.</li>
+          <ul class="ledger" id="ledger">
+            <li><span class="x">✕</span>never interrupt your work block for a flash sale.</li>
+            <li><span class="x">✕</span>never buzz through dinner for an email that could wait.</li>
+            <li><span class="x">✕</span>never turn your run into a public scoreboard.</li>
+            <li><span class="x">✕</span>never glow in your bedroom after 9 pm.</li>
           </ul>
 
-          <p class="matter reveal" style="--d: 550ms">
+          <p class="matter step">
             The people who truly matter always get through. The rest arrives in batches, on your schedule.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- 4. The conviction — the rest beat. No image, deliberately. -->
+    <!-- 06 — The Conviction: the rest beat. No image, deliberately. -->
     <section class="conviction">
+      <span class="marker">06 — THE CONVICTION</span>
       <div class="conviction-inner">
-        <h2 class="reveal">We left nothing for you to configure.</h2>
+        <h2 class="step">We left <em>nothing</em><br />for you to configure.</h2>
 
-        <div class="conviction-copy reveal" style="--d: 100ms">
+        <div class="conviction-copy step">
           <p>
             We made the decisions. That's what building something means. One product, one opinion.
             Made to last years on your wrist — not until next year's launch.
@@ -644,154 +1679,737 @@ import Layout from '../layouts/Layout.astro';
           </p>
         </div>
 
-        <div class="reveal" style="--d: 200ms">
-          <p class="creed">Ready the day it arrives.</p>
-          <p class="creed">Drawn by hand before it was ever a file.</p>
-          <p class="creed">No annual upgrade to chase.</p>
+        <div class="step">
+          <p class="creed fw">ready the day it arrives.</p>
+          <p class="creed fw">no settings screen to get lost in.</p>
+          <p class="creed fw">no annual upgrade to chase.</p>
         </div>
       </div>
     </section>
 
-    <!-- 5. The line in the sand — the product turns its face away -->
-    <section class="capture">
-      <div class="capture-inner">
-        <div class="capture-copy">
-          <h2 class="reveal">The first units go to the people who get it.</h2>
+    {/* 07 — The Bench + the hold ritual. Ships HIDDEN until the flat-lay asset
+        exists (spec v3 §7) — flip BENCH_READY when /images/bench.jpg is delivered.
+        The glimpse img is a stand-in fragment; replace with the real strap-lug /
+        case-back crop. Never the full watch. */}
+    {BENCH_READY && (
+      <section class="bench" id="bench">
+        <span class="marker">07 — THE BENCH</span>
+        <h2 class="step">Drawn by hand before it was ever a file.</h2>
 
-          <p class="capture-sub reveal" style="--d: 150ms">
+        <div class="bench-stage pool" id="benchStage">
+          <img src="/images/bench.jpg" alt="" aria-hidden="true" loading="lazy" />
+          <div class="pool-veil" aria-hidden="true"></div>
+
+          <span class="caption bench-label bl-1">button, third attempt.</span>
+          <span class="caption bench-label bl-2">the spring that says no.</span>
+          <span class="caption bench-label bl-3">not a render.</span>
+
+          <div class="chalk" id="chalk" role="button" tabindex="0" aria-label="hold to see it">
+            <div class="glimpse" id="glimpse">
+              <img src="/images/teaser-button.jpg" alt="" />
+            </div>
+            <span class="caption" id="chalkLabel">hold to see it.</span>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- 08 — The Receipt: the amber moment -->
+    <section class="receipt-sec">
+      <span class="marker">08 — THE RECEIPT</span>
+      <div class="receipt-grid">
+        <div class="receipt" id="receipt">
+          <div class="paper-tex" aria-hidden="true"></div>
+          <span class="rl">VOLT · WEEK 27</span>
+          <span class="rl">────────────────────────────</span>
+          <span class="rl">interruptions declined    214</span>
+          <span class="rl">delivered in batches       31</span>
+          <span class="rl">after 9 PM                  0</span>
+          <span class="rl">people who got through      2</span>
+          <span class="rl">        (both mattered)</span>
+          <span class="rl">────────────────────────────</span>
+          <span class="rl">personal record: 4h12m focus</span>
+          <span class="rl">no one else will ever see this</span>
+        </div>
+
+        <p class="receipt-aside step">A week, reported once. Not a feed, refreshed forever.</p>
+      </div>
+    </section>
+
+    <!-- 09 — The List: the ritual + your session receipt -->
+    <section class="list-sec">
+      <span class="marker">09 — THE LIST</span>
+      <div class="list-inner">
+        <div class="list-copy">
+          <h2 class="step">The first units go<br />to the people who get it.</h2>
+
+          <p class="list-sub fw step">
             You haven't seen it. That's the point. Leave your email — you'll see it first.
           </p>
 
-          <form class="coupon reveal" style="--d: 300ms" id="leadForm" method="POST" action="/api/subscribe" novalidate>
+          <form class="coupon step" id="leadForm" method="POST" action="/api/subscribe" novalidate>
             <label class="honeypot" aria-hidden="true">
               Leave this field empty
               <input type="text" name="website" tabindex="-1" autocomplete="off" />
             </label>
 
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              required
-              aria-describedby="emailError"
-            />
+            <div class="tape" id="tape">
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+                aria-describedby="emailError"
+              />
+            </div>
             <p class="form-error" id="emailError" role="alert"></p>
 
-            <button type="submit" id="submitBtn">Cut the leash</button>
+            <button type="submit" class="cut-btn" id="submitBtn">CUT THE LEASH</button>
           </form>
 
-          <div class="form-success" id="formSuccess" role="status">
-            You're on the list. Unit by unit, we'll notify in order of arrival. You'll see it before anyone.
+          <div class="confirm" id="confirm" role="status">
+            <p class="rl" id="confirmUnit"></p>
           </div>
 
-          <p class="fine-print reveal" style="--d: 400ms">
-            One email when Volt opens. No others. We promise little on purpose.
-          </p>
+          <!-- your session receipt — computed client-side, session-only, never sent -->
+          <div class="session" id="session" hidden>
+            <div class="s-receipt" id="sessionReceipt">
+              <div class="paper-tex" aria-hidden="true"></div>
+            </div>
+            <button type="button" class="keep-btn fw" id="keepBtn">keep it</button>
+          </div>
 
-          <p class="aside reveal" style="--d: 500ms; margin-top: 2.6rem">
-            It doesn't need to face you to be beautiful.
+          <p class="fine-print step">
+            One email when Volt opens. No others. We promise little on purpose.
           </p>
         </div>
 
-        <div class="capture-photo fragment reveal">
-          <img src="/images/teaser-profile.jpg" alt="" aria-hidden="true" loading="lazy" />
+        <div>
+          <div class="list-photo">
+            <img src="/images/teaser-profile.jpg" alt="" aria-hidden="true" loading="lazy" />
+          </div>
+          <p class="caption list-caption">it doesn't need to face you to be beautiful.</p>
         </div>
       </div>
     </section>
+
+    <!-- 10 — The Batch: the held interruptions, delivered where they belong -->
+    <section class="batch" id="batch">
+      <span class="marker">10 — THE BATCH</span>
+      <p class="batch-line fw" id="batchLine"></p>
+      <div class="batch-stack" id="batchStack" aria-hidden="true"></div>
+    </section>
   </main>
 
-  <footer>VOLT · built to last</footer>
+  <!-- The Pulse -->
+  <footer id="pulse">
+    <span class="pulse-dot" aria-hidden="true"></span>
+    <p class="footer-mark">VOLT · built to last</p>
+    <div class="claims">
+      <p>no cookie banner. we don't track you.</p>
+      <p>this page weighs less than your attention.</p>
+    </div>
+  </footer>
 
   <script>
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const night = document.documentElement.classList.contains('night');
+    const io = 'IntersectionObserver' in window;
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
 
-    // ---- Reveals + fragment breathe: once, via IntersectionObserver ----
-    const revealEls = document.querySelectorAll('.reveal');
-    if (reducedMotion || !('IntersectionObserver' in window)) {
-      revealEls.forEach((el) => el.classList.add('is-visible'));
-    } else {
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('is-visible');
-              io.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
-      );
-      revealEls.forEach((el) => io.observe(el));
-    }
-
-    // ---- Cost lines: one at a time, previous dims to 35% ----
-    const lines = Array.from(document.querySelectorAll('.cost-line'));
-    const showLines = () => {
-      if (reducedMotion) {
-        lines.forEach((line, i) => {
-          line.classList.add('on');
-          if (i < lines.length - 1) line.classList.add('dim');
-        });
+    // Observe once, then run
+    const once = (el, fn, threshold = 0.4) => {
+      if (!el) return;
+      if (rm || !io) {
+        fn();
         return;
       }
-      lines.forEach((line, i) => {
-        setTimeout(() => {
-          line.classList.add('on');
-          if (i > 0) lines[i - 1].classList.add('dim');
-        }, i * 900);
-      });
+      const o = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            o.disconnect();
+            fn();
+          }
+        },
+        { threshold }
+      );
+      o.observe(el);
     };
 
-    const linesIo = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          linesIo.disconnect();
-          showLines();
+    // verb: print — fast character feed
+    const printText = (el, text, cps, done) => {
+      if (rm) {
+        el.textContent = text;
+        if (done) done();
+        return;
+      }
+      let i = 0;
+      const step = () => {
+        i += 2;
+        el.textContent = text.slice(0, i);
+        if (i < text.length) {
+          setTimeout(step, cps);
+        } else if (done) {
+          done();
+        }
+      };
+      step();
+    };
+
+    // shared rAF-throttled scroll bus
+    const scrollFns = [];
+    let scrollScheduled = false;
+    const onScroll = (fn) => {
+      scrollFns.push(fn);
+      fn();
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!scrollScheduled) {
+          scrollScheduled = true;
+          requestAnimationFrame(() => {
+            scrollScheduled = false;
+            scrollFns.forEach((f) => f());
+          });
         }
       },
-      { threshold: 0.3 }
+      { passive: true }
     );
-    linesIo.observe(document.getElementById('costLines'));
 
-    // ---- Counter: 0 → 94 over 1.2s, once ----
-    const counterEl = document.getElementById('counter');
-    const runCounter = () => {
-      if (reducedMotion) {
-        counterEl.textContent = '94';
+    /* ===== §3 personality budget: one voice at a time, ≥30s apart, once per visit ===== */
+    const P = { activeUntil: 0, lastAt: 0, fired: {} };
+    ['tabtrap', 'doomscroll', 'hold', 'session'].forEach((k) => {
+      try {
+        if (sessionStorage.getItem('volt-p-' + k)) P.fired[k] = true;
+      } catch (e) {}
+    });
+    const canStamp = (name, repeat) => {
+      const now = Date.now();
+      if (now < P.activeUntil) return false;
+      if (!repeat && P.fired[name]) return false;
+      if (P.lastAt && now - P.lastAt < 30000) return false;
+      return true;
+    };
+    const claimStamp = (name, durMs, repeat) => {
+      if (!canStamp(name, repeat)) return false;
+      P.activeUntil = Date.now() + durMs;
+      P.lastAt = Date.now();
+      if (!repeat) {
+        P.fired[name] = true;
+        try {
+          sessionStorage.setItem('volt-p-' + name, '1');
+        } catch (e) {}
+      }
+      return true;
+    };
+
+    /* ===== session metrics (client-side, session-only, never sent) ===== */
+    const sessionStart = Date.now();
+    let scrollBursts = 0;
+    let tabEscapes = 0;
+    let lastBurst = 0;
+    window.addEventListener(
+      'scroll',
+      () => {
+        const now = Date.now();
+        if (now - lastBurst > 400) {
+          scrollBursts++;
+          lastBurst = now;
+        }
+      },
+      { passive: true }
+    );
+
+    /* ===== 00 — Boot stamp (≤0.8s, cuts) ===== */
+    const boot = document.getElementById('boot');
+    const bootLine = document.getElementById('bootLine');
+    const BOOT_TEXT = 'unit #001 — drawn by hand before it was ever a file';
+
+    const startHero = () => {
+      const lines = document.querySelectorAll('.hl-line');
+      if (rm) {
+        lines.forEach((l) => l.classList.add('on'));
+        document.getElementById('heroSub').classList.add('on');
+        document.getElementById('reel').classList.add('lit');
+        return;
+      }
+      lines.forEach((l, i) => setTimeout(() => l.classList.add('on'), i * 220));
+      setTimeout(() => document.getElementById('heroSub').classList.add('on'), 660);
+      // the reel ignites last: brightness 0 → 1 in 120ms
+      setTimeout(() => document.getElementById('reel').classList.add('lit'), 820);
+    };
+
+    const runBoot = () => {
+      const firstVisit = document.documentElement.hasAttribute('data-boot');
+      if (!firstVisit || rm) {
+        if (boot) boot.remove();
+        try {
+          localStorage.setItem('volt-boot', '1');
+        } catch (e) {}
+        startHero();
         return;
       }
       const start = performance.now();
+      const typeMs = 500;
       const tick = (now) => {
-        const progress = Math.min((now - start) / 1200, 1);
-        counterEl.textContent = String(Math.round(94 * progress));
-        if (progress < 1) requestAnimationFrame(tick);
+        const p = Math.min((now - start) / typeMs, 1);
+        bootLine.textContent = BOOT_TEXT.slice(0, Math.round(BOOT_TEXT.length * p));
+        if (p < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          setTimeout(() => {
+            boot.remove();
+            document.documentElement.removeAttribute('data-boot');
+            try {
+              localStorage.setItem('volt-boot', '1');
+            } catch (e) {}
+            startHero();
+          }, 250);
+        }
       };
       requestAnimationFrame(tick);
     };
+    runBoot();
 
-    const countIo = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          countIo.disconnect();
-          runCounter();
+    /* ===== reel: paused while off-screen ===== */
+    const reel = document.getElementById('reel');
+    if (io && !rm) {
+      new IntersectionObserver((entries) => {
+        entries.forEach((e) => reel.classList.toggle('paused', !e.isIntersecting));
+      }).observe(reel);
+    } else {
+      reel.classList.remove('paused');
+    }
+
+    /* ===== night stamp: live local time ===== */
+    if (night) {
+      const stamp = document.getElementById('nightStamp');
+      const fmt = () => {
+        const d = new Date();
+        let h = d.getHours();
+        const ap = h >= 12 ? 'pm' : 'am';
+        h = h % 12 || 12;
+        const m = String(d.getMinutes()).padStart(2, '0');
+        stamp.textContent = `it's ${h}:${m} ${ap}. this page won't glow in your bedroom.`;
+      };
+      fmt();
+      setInterval(fmt, 30000);
+    }
+
+    /* ===== generic step reveals (single opacity step — not a fade) ===== */
+    const steps = document.querySelectorAll('.step');
+    if (!io) {
+      steps.forEach((el) => el.classList.add('on'));
+    } else {
+      const so = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add('on');
+              so.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.2, rootMargin: '0px 0px -40px 0px' }
+      );
+      steps.forEach((el) => {
+        if (el.id === 'heroSub' || el.id === 'ornot' || el.id === 'noiseFw' || el.id === 'tallyQ') return;
+        so.observe(el);
+      });
+    }
+
+    /* ===== 02 — The Tally: scroll-scrubbed odometer ===== */
+    const tally = document.getElementById('tally');
+    const drums = document.getElementById('drums');
+    const drumCols = [document.getElementById('drumTens'), document.getElementById('drumOnes')];
+    const tallyClock = document.getElementById('tallyClock');
+    const ticksEl = document.getElementById('ticks');
+    const tallyFw = document.getElementById('tallyFw');
+    const tallyQ = document.getElementById('tallyQ');
+
+    // build drum columns: digits 0..9 plus wrap digits so 9→0 rolls forward
+    drumCols.forEach((col) => {
+      col.innerHTML = Array.from({ length: 12 }, (_, i) => `<div>${i % 10}</div>`).join('');
+    });
+
+    // build 96 ticks; three of them mattered (09:12, 14:30, 21:00 → indices 13, 45, 84)
+    const MATTER = { 13: '09:12 — her call', 45: '14:30 — the reminder', 84: '21:00 — day, closed' };
+    const tickEls = [];
+    for (let i = 0; i < 96; i++) {
+      const t = document.createElement('span');
+      t.className = 'tick' + (MATTER[i] ? ' matters' : '');
+      ticksEl.appendChild(t);
+      tickEls.push(t);
+      if (MATTER[i]) {
+        const lab = document.createElement('span');
+        lab.className = 'tick-label' + (i === 45 ? ' tl-mid' : '');
+        lab.style.left = (i / 95) * 100 + '%';
+        lab.textContent = MATTER[i];
+        ticksEl.appendChild(lab);
+      }
+    }
+
+    let tallyLit = 0;
+    let tallyLocked = false;
+    let verdictDone = false;
+
+    const setDrums = (exact) => {
+      // odometer mechanics: tens only rolls while ones passes 9 → 0
+      const ones = exact % 10;
+      const tens = Math.floor(exact / 10) + Math.max(0, (exact % 10) - 9);
+      drumCols[0].style.transform = `translateY(${(1 - tens).toFixed(3)}em)`;
+      drumCols[1].style.transform = `translateY(${(1 - ones).toFixed(3)}em)`;
+    };
+
+    const setClock = (exact) => {
+      const t = 7 + (exact / 96) * 16;
+      const hh = Math.min(23, Math.floor(t));
+      const mm = Math.floor((t - hh) * 60);
+      tallyClock.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    };
+
+    const setTicks = (count) => {
+      if (count > tallyLit) {
+        for (let i = tallyLit; i < count; i++) {
+          const t = tickEls[i];
+          t.classList.add('lit', 'flick');
+          setTimeout(() => t.classList.remove('flick'), 90);
         }
-      },
-      { threshold: 0.5 }
-    );
-    countIo.observe(document.getElementById('costCount'));
+      } else if (count < tallyLit) {
+        for (let i = count; i < tallyLit; i++) tickEls[i].classList.remove('lit', 'flick');
+      }
+      tallyLit = count;
+    };
 
-    // ---- Coupon form ----
+    const lockTally = () => {
+      ticksEl.classList.add('out');
+      if (!tallyLocked && !rm) {
+        drums.classList.add('clunk');
+        setTimeout(() => drums.classList.remove('clunk'), 120);
+      }
+      tallyLocked = true;
+      if (!verdictDone) {
+        verdictDone = true;
+        printText(tallyFw, '96 glances. 3 mattered. volt shows you those.', 16, () => {
+          setTimeout(() => tallyQ.classList.add('on'), 500);
+        });
+      }
+    };
+
+    const renderTally = (exact) => {
+      setDrums(exact);
+      setClock(exact);
+      setTicks(Math.floor(exact));
+      if (exact >= 95.99) {
+        lockTally();
+      } else if (tallyLocked && exact < 95.5) {
+        // rewinding the day is legitimate — the strip re-lights; the verdict stays printed
+        ticksEl.classList.remove('out');
+        tallyLocked = false;
+      }
+    };
+
+    if (rm) {
+      renderTally(96); // static end-state composition
+    } else {
+      onScroll(() => {
+        const rect = tally.getBoundingClientRect();
+        const total = rect.height - window.innerHeight;
+        const p = Math.min(Math.max(-rect.top / total, 0), 1);
+        renderTally(p * 96);
+      });
+    }
+
+    /* ===== 03 — The Cost: scroll beats (verb: replace) ===== */
+    const cost = document.getElementById('cost');
+    const costLines = Array.from(document.querySelectorAll('.cost-line'));
+
+    if (rm) {
+      costLines.forEach((l, i) => {
+        l.classList.add('on');
+        if (i < costLines.length - 1) l.classList.add('dim');
+      });
+    } else {
+      onScroll(() => {
+        const rect = cost.getBoundingClientRect();
+        const total = rect.height - window.innerHeight;
+        const p = Math.min(Math.max(-rect.top / total, 0), 1);
+        const idx = Math.min(3, Math.floor(p / 0.2));
+        costLines.forEach((l, i) => {
+          l.classList.toggle('on', p > 0.02 && i <= idx);
+          l.classList.toggle('dim', i < idx);
+        });
+      });
+    }
+
+    /* ===== 04 — The Noise ===== */
+    const noise = document.getElementById('noise');
+    const noiseCards = document.getElementById('noiseCards');
+    const ornot = document.getElementById('ornot');
+    const noiseFw = document.getElementById('noiseFw');
+    const flashover = document.getElementById('flashover');
+    const blackout = document.getElementById('blackout');
+    const grain = document.getElementById('grain');
+
+    // real card anatomy: icon / title / body — the notifications everyone knows
+    const CARDS = [
+      ['✦', 'Flash Sale', 'Ends tonight — 20% off everything'],
+      ['♥', 'Social', 'Someone liked your photo'],
+      ['◔', 'Screen Time', 'Your weekly report is ready'],
+      ['●', 'Followers', 'You have 3 new followers'],
+      ['▣', 'Delivery', 'Your package is 2 stops away'],
+      ['⚑', 'Streak', "Don't lose your 41-day streak!"],
+      ['⚿', 'Security', 'New login from Chrome on Windows'],
+      ['◍', 'Trending', 'Trending near you: 7 stories'],
+      ['❑', 'Memories', 'Your memories from 2019'],
+      ['◒', 'Battery', 'Battery at 20% — turn on saver?'],
+      ['@', 'Mentions', 'Someone mentioned you'],
+      ['✦', 'Offer', 'Limited offer: 2 hours left'],
+    ];
+
+    const makeCard = ([icon, title, body]) => {
+      const el = document.createElement('div');
+      el.className = 'noise-card';
+      el.innerHTML = `<span class="nc-icon">${icon}</span><div><div class="nc-title">${title}</div><div class="nc-body">${body}</div></div>`;
+      return el;
+    };
+
+    const scatterCard = (el, i, tidy) => {
+      if (tidy) {
+        // night: slightly scattered but never text-on-text
+        el.style.left = 6 + (i % 3) * 31 + '%';
+        el.style.top = 8 + Math.floor(i / 3) * 22 + '%';
+        el.style.transform = `rotate(${(i % 2 ? -1.5 : 1.5).toFixed(1)}deg)`;
+      } else {
+        el.style.left = 4 + Math.random() * 62 + '%';
+        el.style.top = 6 + Math.random() * 68 + '%';
+        el.style.transform = `rotate(${(Math.random() * 14 - 7).toFixed(1)}deg)`;
+      }
+      el.style.zIndex = String(i);
+    };
+
+    const staticCollage = (tidy) => {
+      CARDS.slice(0, tidy ? 9 : 12).forEach((c, i) => {
+        const el = makeCard(c);
+        scatterCard(el, i, tidy);
+        noiseCards.appendChild(el);
+      });
+      noise.classList.add('calm');
+    };
+
+    if (night) {
+      staticCollage(true); // not tonight.
+    } else if (rm) {
+      staticCollage(false);
+      ornot.classList.add('on');
+      noiseFw.classList.add('on');
+    } else {
+      let fired = false;
+      once(
+        noise,
+        () => {
+          if (fired) return;
+          fired = true;
+
+          let delay = 0;
+          const gaps = [0, 260, 200, 160, 130, 105, 85, 70, 58, 48, 40, 34];
+          CARDS.forEach((c, i) => {
+            delay += gaps[i];
+            setTimeout(() => {
+              const el = makeCard(c);
+              scatterCard(el, i, false);
+              noiseCards.appendChild(el);
+            }, delay);
+          });
+
+          grain.classList.add('hot');
+          const bStart = performance.now();
+          const brighten = (now) => {
+            const p = Math.min((now - bStart) / 1200, 1);
+            flashover.style.opacity = String(p * 0.92);
+            if (p < 1) requestAnimationFrame(brighten);
+          };
+          requestAnimationFrame(brighten);
+
+          // HARD CUT to black. no transition. 700ms of absolute nothing.
+          setTimeout(() => {
+            blackout.style.display = 'block';
+            flashover.style.opacity = '0';
+            grain.classList.remove('hot');
+            noiseCards.innerHTML = '';
+
+            setTimeout(() => {
+              blackout.style.display = 'none';
+              ornot.classList.add('on');
+              setTimeout(() => noiseFw.classList.add('on'), 600);
+            }, 700);
+          }, 1250);
+        },
+        0.55
+      );
+    }
+
+    /* ===== 05 — the ledger stamps in ===== */
+    const ledgerRows = document.querySelectorAll('#ledger li');
+    once(
+      document.getElementById('ledger'),
+      () => {
+        ledgerRows.forEach((li, i) => setTimeout(() => li.classList.add('on'), i * 220));
+      },
+      0.3
+    );
+
+    /* ===== §3.2 cursor pool of light — 05 and 07 only ===== */
+    const pools = document.querySelectorAll('.pool');
+    pools.forEach((pool) => {
+      const veil = pool.querySelector('.pool-veil');
+      if (!veil) return;
+      if (finePointer) {
+        pool.addEventListener('pointermove', (e) => {
+          const r = pool.getBoundingClientRect();
+          veil.style.setProperty('--mx', ((e.clientX - r.left) / r.width) * 100 + '%');
+          veil.style.setProperty('--my', ((e.clientY - r.top) / r.height) * 100 + '%');
+        });
+      } else if (!rm) {
+        // touch: slow autonomous drift
+        let visible = true;
+        if (io) {
+          new IntersectionObserver((es) => {
+            visible = es.some((e) => e.isIntersecting);
+          }).observe(pool);
+        }
+        const drift = (t) => {
+          if (visible) {
+            veil.style.setProperty('--mx', 50 + 34 * Math.sin(t * 0.00011) + '%');
+            veil.style.setProperty('--my', 50 + 28 * Math.cos(t * 0.00007) + '%');
+          }
+          requestAnimationFrame(drift);
+        };
+        requestAnimationFrame(drift);
+      }
+    });
+
+    /* ===== 07 — the hold ritual (dormant until the bench asset ships) ===== */
+    const chalk = document.getElementById('chalk');
+    if (chalk) {
+      const chalkLabel = document.getElementById('chalkLabel');
+      const glimpse = document.getElementById('glimpse');
+      let holdStep = 0;
+      let holdTimer = null;
+      let slipTimer = null;
+
+      const setHold = (v) => {
+        holdStep = Math.max(0, Math.min(12, v));
+        chalk.style.setProperty('--hold', String(holdStep));
+      };
+
+      const payoff = () => {
+        if (!claimStamp('hold', 5000)) {
+          setHold(0);
+          return;
+        }
+        glimpse.classList.add('show');
+        setTimeout(() => {
+          glimpse.classList.remove('show');
+          setHold(0);
+          chalkLabel.textContent = "you've seen enough.";
+          printText(chalkLabel, "unit #001 exists. that's all you get.", 18, () => {
+            setTimeout(() => (chalkLabel.textContent = "you've seen enough."), 2600);
+          });
+        }, 400);
+      };
+
+      const engrave = () => {
+        if (P.fired.hold) return;
+        clearInterval(slipTimer);
+        holdTimer = setInterval(() => {
+          setHold(holdStep + 1); // ratchet: 12 discrete steps, not smooth
+          if (holdStep >= 12) {
+            clearInterval(holdTimer);
+            payoff();
+          }
+        }, 250);
+      };
+
+      const slip = () => {
+        clearInterval(holdTimer);
+        if (holdStep > 0 && holdStep < 12) {
+          slipTimer = setInterval(() => {
+            setHold(holdStep - 1);
+            if (holdStep <= 0) clearInterval(slipTimer);
+          }, 40);
+        }
+      };
+
+      chalk.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        engrave();
+      });
+      chalk.addEventListener('pointerup', slip);
+      chalk.addEventListener('pointerleave', slip);
+
+      if (P.fired.hold) chalkLabel.textContent = "you've seen enough.";
+    }
+
+    /* ===== 08 — the receipt prints on scrub (not a timer) ===== */
+    const receipt = document.getElementById('receipt');
+    const receiptLines = Array.from(document.querySelectorAll('#receipt .rl'));
+    let printedCount = 0;
+
+    const printReceipt = (count) => {
+      // a receipt can't unprint — monotonic
+      for (let i = printedCount; i < count; i++) {
+        const l = receiptLines[i];
+        l.classList.add('on');
+        l.style.transform = `translateY(${(Math.random() * 2 - 1).toFixed(2)}px)`; // feed jitter
+      }
+      printedCount = Math.max(printedCount, count);
+    };
+
+    if (rm) {
+      printReceipt(receiptLines.length);
+    } else {
+      onScroll(() => {
+        const rect = receipt.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const p = Math.min(Math.max((vh - rect.top) / (vh * 0.75), 0), 1);
+        printReceipt(Math.ceil(p * receiptLines.length));
+      });
+    }
+
+    /* ===== 09 — the ritual ===== */
     const form = document.getElementById('leadForm');
+    const tape = document.getElementById('tape');
     const emailInput = document.getElementById('email');
     const emailError = document.getElementById('emailError');
     const submitBtn = document.getElementById('submitBtn');
-    const formSuccess = document.getElementById('formSuccess');
+    const confirmBox = document.getElementById('confirm');
+    const confirmUnit = document.getElementById('confirmUnit');
 
-    const showSuccess = () => {
-      form.style.display = 'none';
-      formSuccess.classList.add('show');
+    const showConfirm = (unit) => {
+      // real queue number or none — never fake it
+      const line = unit
+        ? `unit #${unit} in line. you'll see it before anyone.`
+        : "you're in line. you'll see it before anyone.";
+
+      const finish = () => {
+        form.style.display = 'none';
+        confirmBox.classList.add('show');
+        printText(confirmUnit, line, 16, () => {
+          setTimeout(() => printSessionReceipt(), 900);
+        });
+      };
+
+      if (rm) {
+        finish();
+        return;
+      }
+      submitBtn.style.display = 'none';
+      tape.classList.add('torn'); // verb: tear
+      setTimeout(finish, 500);
     };
 
     form.addEventListener('submit', async (e) => {
@@ -802,14 +2420,14 @@ import Layout from '../layouts/Layout.astro';
 
       const email = emailInput.value.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        emailError.textContent = "That email doesn't look right.";
+        emailError.textContent = "that email doesn't look right.";
         emailError.classList.add('show');
         return;
       }
 
       // Bots that fill the honeypot get a quiet success and no request.
       if (form.elements.website.value) {
-        showSuccess();
+        showConfirm(null);
         return;
       }
 
@@ -830,20 +2448,362 @@ import Layout from '../layouts/Layout.astro';
 
         // 409 = already on the list; treated as success.
         if (response.ok || response.status === 409) {
-          showSuccess();
+          let unit = null;
+          try {
+            const data = await response.json();
+            if (data && data.unit) unit = data.unit;
+          } catch (err) {}
+          showConfirm(unit);
         } else {
-          emailError.textContent = 'Something went wrong. Try again.';
+          emailError.textContent = 'something went wrong. try again.';
           emailError.classList.add('show');
           submitBtn.disabled = false;
         }
       } catch {
-        emailError.textContent = 'Something went wrong. Try again.';
+        emailError.textContent = 'something went wrong. try again.';
         emailError.classList.add('show');
         submitBtn.disabled = false;
       }
     });
 
-    // ---- Font verification (acceptance: no serif fallback) ----
+    /* ===== your session receipt (once per visit: CTA or exit-intent) ===== */
+    const sessionBox = document.getElementById('session');
+    const sessionReceipt = document.getElementById('sessionReceipt');
+    const keepBtn = document.getElementById('keepBtn');
+    let sessionLines = [];
+
+    const buildSessionLines = () => {
+      const secs = Math.floor((Date.now() - sessionStart) / 1000);
+      const dur = `${Math.floor(secs / 60)}m${String(secs % 60).padStart(2, '0')}s`;
+      const W = 26;
+      const row = (label, val) => label + String(val).padStart(W - label.length);
+      return [
+        'VOLT · YOUR VISIT',
+        '─────────────────────────',
+        row('time here', dur),
+        row('scrolls', scrollBursts),
+        row('tab escapes', tabEscapes),
+        row('interruptions from us', 0),
+        '─────────────────────────',
+        "felt good, didn't it?",
+      ];
+    };
+
+    const printSessionReceipt = () => {
+      if (P.fired.session) return;
+      P.fired.session = true;
+      try {
+        sessionStorage.setItem('volt-p-session', '1');
+      } catch (e) {}
+      sessionLines = buildSessionLines();
+      sessionBox.hidden = false;
+      sessionLines.forEach((text, i) => {
+        const span = document.createElement('span');
+        span.className = 'rl';
+        span.textContent = text;
+        sessionReceipt.appendChild(span);
+        if (rm) {
+          span.classList.add('on');
+        } else {
+          setTimeout(() => {
+            span.classList.add('on');
+            span.style.transform = `translateY(${(Math.random() * 2 - 1).toFixed(2)}px)`;
+          }, i * 80);
+        }
+      });
+    };
+
+    // exit-intent (desktop): if the visitor never reached the CTA
+    document.addEventListener('mouseout', (e) => {
+      if (!e.relatedTarget && e.clientY <= 0) printSessionReceipt();
+    });
+
+    // keep it → client-side PNG render
+    keepBtn.addEventListener('click', () => {
+      const lines = sessionLines.length ? sessionLines : buildSessionLines();
+      const c = document.createElement('canvas');
+      const scale = 2;
+      c.width = 340 * scale;
+      c.height = (60 + lines.length * 26) * scale;
+      const x = c.getContext('2d');
+      x.scale(scale, scale);
+      x.fillStyle = '#0A0B08';
+      x.fillRect(0, 0, 340, 60 + lines.length * 26);
+      x.fillStyle = '#E8E4DA';
+      x.font = '13px "IBM Plex Mono", monospace';
+      lines.forEach((t, i) => x.fillText(t, 24, 42 + i * 26));
+      const a = document.createElement('a');
+      a.download = 'volt-visit.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+    });
+
+    /* ===== §3.6 held interruptions + 10 — The Batch ===== */
+    const heldEl = document.getElementById('held');
+    const batch = document.getElementById('batch');
+    const batchLine = document.getElementById('batchLine');
+    const batchStack = document.getElementById('batchStack');
+
+    const NAGS = [
+      ['○', '20% off', 'today only'],
+      ['○', 'newsletter', "don't miss our newsletter"],
+      ['○', 'feedback', 'rate your experience'],
+      ['○', 'notifications', 'turn on notifications?'],
+      ['○', 'cart', 'your cart misses you'],
+      ['○', 'offer', '2 hours left on your offer'],
+      ['○', 'survey', 'one quick question for you'],
+    ];
+    const heldNags = [];
+    const nagQueue = [];
+
+    const flushNags = () => {
+      if (!nagQueue.length) return;
+      // a bump is the quietest personality voice — it waits its turn
+      if (Date.now() < P.activeUntil) return;
+      const nag = nagQueue.shift();
+      heldNags.push(nag);
+      heldEl.hidden = false;
+      heldEl.textContent = `held: ${heldNags.length}`; // no animation beyond the number swap
+    };
+    setInterval(flushNags, 2500);
+
+    const suppressNag = (i) => {
+      if (heldNags.length + nagQueue.length >= 7) return;
+      nagQueue.push(NAGS[i]);
+      flushNags();
+    };
+
+    // organic milestones: one per section
+    [
+      ['cost', 0],
+      ['noise', 1],
+      ['refusal', 2],
+      ['receipt', 4],
+    ].forEach(([id, nagIdx], k) => {
+      once(document.getElementById(id), () => suppressNag(nagIdx), 0.35);
+    });
+    once(document.querySelector('.conviction'), () => suppressNag(3), 0.35);
+    once(document.querySelector('.list-sec'), () => suppressNag(5), 0.35);
+
+    let batchDone = false;
+    once(
+      batch,
+      () => {
+        if (batchDone) return;
+        batchDone = true;
+        // deliver whatever is held OR queued by now
+        while (nagQueue.length && heldNags.length < 7) heldNags.push(nagQueue.shift());
+        heldEl.textContent = `held: ${heldNags.length}`;
+        if (!heldNags.length) {
+          batchLine.textContent = 'nothing worth holding.';
+          return;
+        }
+        printText(
+          batchLine,
+          `while you read, we held ${heldNags.length} interruptions. here they are, together, where they belong.`,
+          14,
+          () => {
+            heldNags.forEach(([icon, title, body]) => batchStack.appendChild(makeCard([icon, title, body])));
+            requestAnimationFrame(() => batchStack.classList.add('delivered'));
+            heldEl.hidden = true;
+            if (!rm) setTimeout(() => batchStack.classList.add('crumble'), 1600);
+          }
+        );
+      },
+      0.35
+    );
+
+    /* ===== §3.1 tab-title trap (once per visit) ===== */
+    const topStamp = document.getElementById('topStamp');
+    const origTitle = document.title;
+    let awayTimer = null;
+    let trapped = false;
+    let favLink = null;
+
+    const setFavDot = (on) => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = c.height = 32;
+        const x = c.getContext('2d');
+        x.fillStyle = '#0C0E0B';
+        x.fillRect(0, 0, 32, 32);
+        if (on) {
+          x.fillStyle = '#FFB000';
+          x.beginPath();
+          x.arc(23, 9, 6, 0, 7);
+          x.fill();
+        }
+        if (!favLink) {
+          favLink = document.createElement('link');
+          favLink.rel = 'icon';
+          document.head.appendChild(favLink);
+        }
+        favLink.href = c.toDataURL('image/png');
+      } catch (e) {}
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        tabEscapes++;
+        resetIdle(true);
+        if (!P.fired.tabtrap) {
+          awayTimer = setTimeout(() => {
+            document.title = '(1) VOLT — new notification';
+            setFavDot(true);
+            trapped = true;
+          }, 2000);
+        }
+      } else {
+        clearTimeout(awayTimer);
+        resetIdle(false);
+        if (trapped) {
+          document.title = origTitle;
+          setFavDot(false);
+          trapped = false;
+          if (claimStamp('tabtrap', 6000)) {
+            topStamp.textContent = "you came back for a notification that doesn't exist. that's the reflex.";
+            topStamp.classList.add('show');
+            setTimeout(() => topStamp.classList.remove('show'), 6000);
+          }
+        }
+      }
+    });
+
+    /* ===== §3.3 doomscroll refusal (once per visit) ===== */
+    const ghostLine = document.getElementById('ghostLine');
+    let franticSince = 0;
+    let lastScrollY = window.scrollY;
+    let lastScrollT = performance.now();
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        const now = performance.now();
+        const dy = Math.abs(window.scrollY - lastScrollY);
+        const dt = Math.max(now - lastScrollT, 1);
+        const speed = (dy / dt) * 1000;
+        lastScrollY = window.scrollY;
+        lastScrollT = now;
+
+        if (speed > 2600) {
+          if (!franticSince) franticSince = now;
+          // never during the tally pin — scrubbing fast there is the point
+          const tr = tally.getBoundingClientRect();
+          const inTally = tr.top < 0 && tr.bottom > window.innerHeight;
+          if (!inTally && now - franticSince > 1500 && claimStamp('doomscroll', 4000)) {
+            ghostLine.classList.add('show');
+            setTimeout(() => ghostLine.classList.remove('show'), 4000);
+          }
+        } else {
+          franticSince = 0; // frantic must be sustained, not resumed
+        }
+      },
+      { passive: true }
+    );
+
+    /* ===== §3.4 page sleep — wake on move (repeatable) ===== */
+    const sleepEl = document.getElementById('sleep');
+    let idleTimer = null;
+    let asleep = false;
+
+    const fallAsleep = () => {
+      if (rm || document.hidden || !claimStamp('sleep', 3600000, true)) return;
+      asleep = true;
+      sleepEl.classList.remove('waking');
+      sleepEl.classList.add('asleep');
+    };
+
+    const wake = () => {
+      if (!asleep) return;
+      asleep = false;
+      P.activeUntil = Date.now(); // release the voice
+      P.lastAt = Date.now();
+      sleepEl.classList.remove('asleep');
+      sleepEl.classList.add('waking');
+    };
+
+    function resetIdle(pause) {
+      wake();
+      clearTimeout(idleTimer);
+      if (!pause && !rm) idleTimer = setTimeout(fallAsleep, 60000);
+    }
+
+    ['mousemove', 'keydown', 'scroll', 'touchstart', 'pointerdown'].forEach((ev) =>
+      window.addEventListener(ev, () => resetIdle(false), { passive: true })
+    );
+    resetIdle(false);
+
+    /* ===== §3.5 crown navigation ===== */
+    const crown = document.getElementById('crown');
+    const crownLabel = document.getElementById('crownLabel');
+    const crownSections = () => Array.from(document.querySelectorAll('main > section, footer'));
+    const crownNames = {
+      hero: '01 — hero',
+      tally: '02 — the tally',
+      cost: '03 — the cost',
+      noise: '04 — the noise',
+      refusal: '05 — the refusal',
+      conviction: '06 — the conviction',
+      bench: '07 — the bench',
+      'receipt-sec': '08 — the receipt',
+      'list-sec': '09 — the list',
+      batch: '10 — the batch',
+      pulse: '— the pulse',
+    };
+
+    if (finePointer) {
+      let dragY = 0;
+      let dragIdx = 0;
+      let rot = 0;
+      let hideLabel = null;
+
+      const labelFor = (el) => {
+        for (const cls of Object.keys(crownNames)) {
+          if (el.id === cls || el.classList.contains(cls)) return crownNames[cls];
+        }
+        return '';
+      };
+
+      crown.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        crown.setPointerCapture(e.pointerId);
+        crown.classList.add('grabbing');
+        clearTimeout(hideLabel);
+        dragY = e.clientY;
+        const secs = crownSections();
+        const y = window.scrollY + 10;
+        dragIdx = 0;
+        secs.forEach((s, i) => {
+          if (s.offsetTop <= y) dragIdx = i;
+        });
+        crownLabel.textContent = labelFor(secs[dragIdx]);
+        crownLabel.classList.add('show');
+      });
+
+      crown.addEventListener('pointermove', (e) => {
+        if (!crown.classList.contains('grabbing')) return;
+        const dy = e.clientY - dragY;
+        rot += dy * 2;
+        crown.style.transform = `translateY(-50%) rotate(${rot}deg)`;
+        if (Math.abs(dy) >= 56) {
+          const secs = crownSections();
+          dragIdx = Math.min(Math.max(dragIdx + Math.sign(dy), 0), secs.length - 1);
+          // ratchet detent: instant travel, no easing
+          window.scrollTo({ top: secs[dragIdx].offsetTop, behavior: 'auto' });
+          crownLabel.textContent = labelFor(secs[dragIdx]);
+          dragY = e.clientY;
+        }
+      });
+
+      const release = () => {
+        crown.classList.remove('grabbing');
+        hideLabel = setTimeout(() => crownLabel.classList.remove('show'), 600);
+      };
+      crown.addEventListener('pointerup', release);
+      crown.addEventListener('pointercancel', release);
+    }
+
+    /* ===== font verification (acceptance: no serif fallback) ===== */
     document.fonts.ready.then(() => {
       const garamond = document.fonts.check('1rem "EB Garamond"');
       const plex = document.fonts.check('1rem "IBM Plex Mono"');

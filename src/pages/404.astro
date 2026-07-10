@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="VOLT — nothing here">
+  <style>
+    .void {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: clamp(3.2rem, 9.5vw, 10rem);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    p {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      color: var(--ink-dim);
+      margin-top: 2.4rem;
+    }
+  </style>
+
+  <main class="void">
+    <h1>Nothing here.</h1>
+    <p>feels good, doesn't it?</p>
+  </main>
+</Layout>
